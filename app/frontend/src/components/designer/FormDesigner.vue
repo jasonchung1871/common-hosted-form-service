@@ -144,6 +144,8 @@
       :form="formSchema"
       :key="reRenderFormIo"
       :options="designerOptions"
+      ref="formioForm"
+      @dblclick.native="onDoubleClickMethod"
       @change="onChangeMethod"
       @render="onRenderMethod"
       @initialized="init"
@@ -161,6 +163,8 @@ import templateExtensions from '@/plugins/templateExtensions';
 import { formService } from '@/services';
 import { IdentityMode, NotificationTypes } from '@/utils/constants';
 import { generateIdps } from '@/utils/transformUtils';
+
+import Utils from 'formiojs/utils';
 
 export default {
   name: 'FormDesigner',
@@ -363,6 +367,27 @@ export default {
       a.click();
       document.body.removeChild(a);
     },
+    onDoubleClickMethod(evt) {
+      // To access the sidebar... we can use this really long accessor
+      if (this.$refs.formioForm.$refs.formio.component.refs.sidebar.contains(evt.target)) {
+        if (evt.target.getAttribute('data-group') === 'customControls') {
+          this.addNotification({
+            message: 'Double clicking to add a custom component is unimplemented.',
+          });
+          return;
+        }
+        let componentType = evt.target.getAttribute('data-type');
+        let componentKey = evt.target.getAttribute('data-key') + '-' + Utils.guid();
+        let newComponent = {
+          type: componentType,
+          key: componentKey,
+          label: evt.target.innerText.trim()
+        };
+
+        this.formSchema.components.push(newComponent);
+        this.reRenderFormIo += 1;
+      }
+    },
 
     // ---------------------------------------------------------------------------------------------------
     // FormIO event handlers
@@ -481,7 +506,7 @@ export default {
     // if form userType (public, idir, team, etc) changes, re-render the form builder
     userType() {
       this.reRenderFormIo += 1;
-    },
+    }
   },
 };
 </script>
