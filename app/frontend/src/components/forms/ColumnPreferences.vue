@@ -84,6 +84,7 @@ export default {
         formId: this.form.id,
         formVersionId: this.form.versions[0].id,
       });
+      this.formFields.sort();
       this.selectedFields =
         this.userFormPreferences && this.userFormPreferences.preferences
           ? this.userFormPreferences.preferences.columnList.filter(x => this.formFields.indexOf(x) !== -1)
