@@ -21,6 +21,6 @@ export default [
   },
   {
     key: 'customClass',
-    ignore: true
+    ignore: false
   },
 ];

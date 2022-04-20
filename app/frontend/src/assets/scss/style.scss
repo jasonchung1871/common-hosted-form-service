@@ -566,3 +566,7 @@ a,
   color: white;
   background: $bcgov-blue;
 }
+
+.formio-component.label-bold > label {
+  font-weight: bold;
+}
