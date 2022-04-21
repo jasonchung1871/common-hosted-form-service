@@ -12,10 +12,12 @@ export default {
   },
   mutations: {
     PUSH(state, notification) {
-      state.notifications.push({
-        ...notification,
-        id: nextId++
-      });
+      if ((state.notifications.filter((n) => n.consoleError === notification.consoleError)).length === 0) {
+        state.notifications.push({
+          ...notification,
+          id: nextId++
+        });
+      }
     },
     DELETE(state, notificationToRemove) {
       state.notifications = state.notifications.filter(
