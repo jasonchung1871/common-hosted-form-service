@@ -57,7 +57,7 @@ export default {
         }, { root: true });
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while trying to delete the API Key.',
+          message: `An error occurred while trying to delete the API Key: ${error}`,
           consoleError: `Error deleting API Key for form ${formId}: ${error}`,
         }, { root: true });
       }
@@ -70,7 +70,7 @@ export default {
         commit('SET_FORMLIST', response.data);
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while fetching forms.',
+          message: `An error occurred while fetching forms: ${error}`,
           consoleError: `Error getting admin form data: ${error}`,
         }, { root: true });
       }
@@ -83,7 +83,7 @@ export default {
         commit('SET_FORM', response.data);
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while fetching this form.',
+          message: `An error occurred while fetching this form: ${error}`,
           consoleError: `Error getting admin form ${formId} data: ${error}`,
         }, { root: true });
       }
@@ -95,7 +95,7 @@ export default {
         commit('SET_ROLES', response.data);
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while fetching form user roles.',
+          message: `An error occurred while fetching form user roles: ${error}`,
           consoleError: `Error getting admin roles data: ${error}`,
         }, { root: true });
       }
@@ -107,7 +107,7 @@ export default {
         commit('SET_API_KEY', response.data);
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while fetching this form\'s API details.',
+          message: `An error occurred while fetching this form's API details: ${error}`,
           consoleError: `Error getting admin API details from form ${formId} data: ${error}`,
         }, { root: true });
       }
@@ -119,7 +119,7 @@ export default {
         commit('SET_FORM', response.data);
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while restoring this form.',
+          message: `An error occurred while restoring this form: ${error}`,
           consoleError: `Error restoring form ${formId} data: ${error}`,
         }, { root: true });
       }
@@ -136,7 +136,7 @@ export default {
         commit('SET_USERLIST', response.data);
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while fetching users.',
+          message: `An error occurred while fetching users: ${error}`,
           consoleError: `Error getting admin users data: ${error}`,
         }, { root: true });
       }
@@ -149,7 +149,7 @@ export default {
         commit('SET_USER', response.data);
       } catch (error) {
         dispatch('notifications/addNotification', {
-          message: 'An error occurred while fetching this user.',
+          message: `An error occurred while fetching this user: ${error}`,
           consoleError: `Error getting admin user ${userId} data: ${error}`,
         }, { root: true });
       }

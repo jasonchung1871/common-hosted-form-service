@@ -411,7 +411,7 @@ export default {
         await this.getFormUsers();
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while attempting to update all user roles',
+          message: `Error setting all user roles for form ${this.formId}: ${error}`,
           consoleError: `Error setting all user roles for form ${this.formId}: ${error}`,
         });
       }
@@ -435,7 +435,7 @@ export default {
         await this.getFormUsers();
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while attempting to update roles for a user',
+          message: `Error setting user roles for form ${this.formId}: ${error}`,
           consoleError: `Error setting user roles for form ${this.formId}: ${error}`,
         });
       }

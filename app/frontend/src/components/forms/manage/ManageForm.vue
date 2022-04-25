@@ -190,7 +190,7 @@ export default {
         }
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while attempting to update the settings for this form.',
+          message: `Error updating settings for ${this.form.id}: ${error}`,
           consoleError: `Error updating settings for ${this.form.id}: ${error}`,
         });
       }

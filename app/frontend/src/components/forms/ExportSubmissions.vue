@@ -199,7 +199,7 @@ export default {
       } catch (error) {
         this.addNotification({
           message:
-            'An error occurred while attempting to export submissions for this form.',
+            `Error export submissions for ${this.form.id}: ${error}`,
           consoleError: `Error export submissions for ${this.form.id}: ${error}`,
         });
       }

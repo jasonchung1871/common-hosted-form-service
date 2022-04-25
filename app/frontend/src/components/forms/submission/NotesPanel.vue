@@ -111,7 +111,7 @@ export default {
         this.getNotes();
       } catch (error) {
         this.addNotification({
-          message: 'An error occured while trying to add the note.',
+          message: `Error adding note: ${error}`,
           consoleError: `Error adding note: ${error}`,
         });
       }
@@ -125,7 +125,7 @@ export default {
         this.notes = response.data;
       } catch (error) {
         this.addNotification({
-          message: 'An error occured while trying to fetch notes for this submission.',
+          message: `Error getting notes for ${this.submissionId}: ${error}`,
           consoleError: `Error getting notes for ${this.submissionId}: ${error}`,
         });
       } finally {

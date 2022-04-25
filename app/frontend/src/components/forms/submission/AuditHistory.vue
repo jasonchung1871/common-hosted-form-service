@@ -85,7 +85,7 @@ export default {
         this.history = response.data;
       } catch (error) {
         this.addNotification({
-          message: 'An error occured while trying to fetch history.',
+          message: `Error getting audit history for ${this.submissionId}: ${error}`,
           consoleError: `Error getting audit history for ${this.submissionId}: ${error}`,
         });
       } finally {

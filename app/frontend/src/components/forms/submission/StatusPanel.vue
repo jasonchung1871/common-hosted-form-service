@@ -253,7 +253,7 @@ export default {
           }
         } catch (error) {
           this.addNotification({
-            message: 'An error occured while trying to fetch recipient emails for this submission.',
+            message: `Error getting recipient emails for ${this.submissionId}: ${error}`,
             consoleError: `Error getting recipient emails for ${this.submissionId}: ${error}`,
           });
         }
@@ -317,7 +317,7 @@ export default {
         }
       } catch (error) {
         this.addNotification({
-          message: 'Error occured fetching status for this submission.',
+          message: `Error getting statuses: ${error.message}`,
           consoleError: `Error getting statuses: ${error.message}`,
         });
       } finally {

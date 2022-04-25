@@ -71,7 +71,7 @@ export default {
           });
         } catch (error) {
           this.addNotification({
-            message: 'An error occured while attempting to send your email.',
+            message: `Email confirmation to ${this.to} failed: ${error}`,
             consoleError: `Email confirmation to ${this.to} failed: ${error}`,
           });
         } finally {

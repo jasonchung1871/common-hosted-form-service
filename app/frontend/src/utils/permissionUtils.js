@@ -74,7 +74,7 @@ export async function preFlightAuth(options = {}, next) {
     }
   } catch (error) {
     store.dispatch('notifications/addNotification', {
-      message: 'An error occurred while loading this form.',
+      message: `An error occurred while loading this form: ${error}`,
       consoleError: `Error while loading ${JSON.stringify(options)}: ${error}`,
     });
     store.dispatch('auth/errorNavigate'); // Halt user with error page

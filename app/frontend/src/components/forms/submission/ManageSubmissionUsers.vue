@@ -236,7 +236,7 @@ export default {
       } catch (error) {
         this.addNotification({
           message:
-            'An error occured while trying to fetch users for this submission.',
+            `Error getting users for ${this.submissionId}: ${error}`,
           consoleError: `Error getting users for ${this.submissionId}: ${error}`,
         });
       } finally {
@@ -270,7 +270,7 @@ export default {
       } catch (error) {
         this.addNotification({
           message:
-            'An error occured while trying to update users for this submission.',
+            `Error setting user permissions. Sub: ${this.submissionId} User: ${userId} Error: ${error}`,
           consoleError: `Error setting user permissions. Sub: ${this.submissionId} User: ${userId} Error: ${error}`,
         });
       } finally {

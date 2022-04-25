@@ -319,7 +319,7 @@ export default {
         this.formSchema = { ...this.formSchema, ...res.data.schema };
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while loading the form design.',
+          message: `Error loading form ${this.formId} schema (version: ${this.versionId} draft: ${this.draftId}): ${error}`,
           consoleError: `Error loading form ${this.formId} schema (version: ${this.versionId} draft: ${this.draftId}): ${error}`,
         });
       }
@@ -338,7 +338,7 @@ export default {
         fileReader.readAsText(file);
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while importing the form schema.',
+          message: `Error importing form schema : ${error}`,
           consoleError: `Error importing form schema : ${error}`,
         });
       }

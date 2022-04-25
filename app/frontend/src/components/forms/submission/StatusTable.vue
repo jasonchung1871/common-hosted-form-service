@@ -54,7 +54,7 @@ export default {
         this.statuses = response.data;
       } catch (error) {
         this.addNotification({
-          message: 'An error occured while trying to fetch statuses.',
+          message: `Error adding note: ${error}`,
           consoleError: `Error adding note: ${error}`,
         });
       } finally {

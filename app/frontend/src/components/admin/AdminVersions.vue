@@ -122,7 +122,7 @@ export default {
         this.formSchema = { ...this.formSchema, ...res.data.schema };
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while loading the form design.',
+          message: `An error occurred while loading the form design: ${error}`,
         });
       }
     },

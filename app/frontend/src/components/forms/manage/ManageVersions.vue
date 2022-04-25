@@ -391,7 +391,7 @@ export default {
         this.formSchema = { ...this.formSchema, ...res.data.schema };
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while loading the form design.',
+          message: `Error loading form ${this.form.id} schema (version / draft: ${id}): ${error}`,
           consoleError: `Error loading form ${this.form.id} schema (version / draft: ${id}): ${error}`,
         });
       }

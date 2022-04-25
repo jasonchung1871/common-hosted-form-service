@@ -167,7 +167,7 @@ export default {
         });
       } catch (e) {
         this.addNotification({
-          message: 'Failed to generate Document',
+          message: `Error submitting template: ${e.message}`,
           consoleError: `Error submitting template: ${e.message}`,
         });
       } finally {

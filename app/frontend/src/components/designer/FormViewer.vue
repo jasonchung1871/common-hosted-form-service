@@ -186,7 +186,7 @@ export default {
         }
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred fetching the submission for this form',
+          message: `Error loading form submission data ${this.submissionId}: ${error}`,
           consoleError: `Error loading form submission data ${this.submissionId}: ${error}`,
         });
       } finally {
@@ -236,7 +236,7 @@ export default {
       } catch (error) {
         if (this.authenticated) {
           this.addNotification({
-            message: 'An error occurred fetching this form',
+            message: `Error loading form schema ${this.versionId}: ${error}`,
             consoleError: `Error loading form schema ${this.versionId}: ${error}`,
           });
         }
@@ -269,7 +269,7 @@ export default {
         }
       } catch (error) {
         this.addNotification({
-          message: 'An error occurred while saving a draft',
+          message: `Error saving draft. SubmissionId: ${this.submissionId}. Error: ${error}`,
           consoleError: `Error saving draft. SubmissionId: ${this.submissionId}. Error: ${error}`,
         });
       }
