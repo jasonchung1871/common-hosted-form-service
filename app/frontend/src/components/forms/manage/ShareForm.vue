@@ -32,12 +32,15 @@
             There is no published version of the form at this time. The link
             below will not be reachable until a version is published.
           </v-alert>
-          <v-expansion-panels>
+          <v-expansion-panels
+            :value="warning ? 1 : 0"
+            :disabled="!warning"
+          >
             <v-expansion-panel>
               <v-expansion-panel-header
                 class="font-weight-bold"
               >
-                Click to reveal link and QR code.
+                {{ expansionText }}
               </v-expansion-panel-header>
               <v-expansion-panel-content>
                 <v-text-field
@@ -152,6 +155,9 @@ export default {
     },
     NOTIFICATIONS_TYPES() {
       return NotificationTypes;
+    },
+    expansionText() {
+      return this.warning ? 'Click to reveal link and QR code.' : '';
     },
   },
   methods: {
