@@ -78,6 +78,35 @@
       </template>
       <template #[`item.actions`]="{ item }">
         <router-link
+          v-if="checkFormSubmit(item) && item.draft"
+          :to="{ name: 'FormDesigner', query: { f: item.id, d: item.draft.id } }"
+          target="_blank"
+        >
+          <v-btn
+            color="primary"
+            text
+            small
+            :disabled="item.draft ? false : true"
+          >
+            <v-icon class="mr-1">edit</v-icon>
+            <span class="d-none d-sm-flex">Edit</span>
+          </v-btn>
+        </router-link>
+        <router-link
+          v-if="checkSubmissionView(item)"
+          :to="
+            item.draft
+              ? { name: 'FormPreview', query: { f: item.id, d: item.draft.id } }
+              : { name: 'FormPreview', query: { f: item.id, v: item.currentVersionId } }
+          "
+          target="_blank"
+        >
+          <v-btn color="primary" text small>
+            <v-icon class="mr-1">visibility</v-icon>
+            <span class="d-none d-sm-flex">Preview</span>
+          </v-btn>
+        </router-link>
+        <router-link
           v-if="checkFormManage(item)"
           :to="{ name: 'FormManage', query: { f: item.id } }"
         >
@@ -147,7 +176,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters('form', ['formList']),
+    ...mapGetters('form', ['formList', 'drafts']),
     filteredFormList() {
       // At this point, we're only showing forms you can manage or view submissions of here
       // This may get reconceptualized in the future to different pages or something
@@ -157,7 +186,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('form', ['getFormsForCurrentUser']),
+    ...mapActions('form', ['getFormsForCurrentUser', 'fetchDrafts', 'fetchVersion']),
     checkFormManage: checkFormManage,
     checkFormSubmit: checkFormSubmit,
     checkSubmissionView: checkSubmissionView,
@@ -171,6 +200,18 @@ export default {
   },
   async mounted() {
     await this.getFormsForCurrentUser();
+    let formList = this.formList.filter(
+      (f) => checkFormManage(f) || checkSubmissionView(f)
+    );
+    for (const f of formList) {
+      await this.fetchDrafts(f.id);
+      if (this.drafts.length > 0) {
+        this.drafts.sort((a, b) => a.updatedAt > b.updatedAt);
+        // Find a draft that isn't published so we can edit it
+        let idx = this.formList.findIndex(o => o.id === f.id);
+        this.formList[idx].draft = this.drafts[0];
+      }
+    }
     this.loading = false;
   },
 };
