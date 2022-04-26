@@ -32,71 +32,82 @@
             There is no published version of the form at this time. The link
             below will not be reachable until a version is published.
           </v-alert>
-          <v-text-field
-            readonly
-            dense
-            flat
-            outlined
-            label="URL"
-            data-test="text-shareUrl"
-            :value="formLink"
-          >
-            <template #prepend>
-              <v-icon>link</v-icon>
-            </template>
-            <template #append-outer>
-              <BaseCopyToClipboard
-                class="mt-n1"
-                :copyText="formLink"
-                tooltipText="Copy URL to clipboard"
-              />
-              <v-tooltip bottom>
-                <template #activator="{ on, attrs }">
-                  <v-btn
-                    class="mt-n1"
-                    color="primary"
-                    :href="formLink"
-                    icon
-                    target="_blank"
-                    v-bind="attrs"
-                    v-on="on"
-                  >
-                    <v-icon class="mr-1">open_in_new</v-icon>
-                  </v-btn>
-                </template>
-                <span>Open this form</span>
-              </v-tooltip>
-            </template>
-          </v-text-field>
-
-          <v-row no-gutters align="end" justify="center">
-            <v-col cols="auto">
-              <div class="qrCodeContainer">
-                <qrcode-vue
+          <v-expansion-panels>
+            <v-expansion-panel>
+              <v-expansion-panel-header
+                class="font-weight-bold"
+              >
+                Click to reveal link and QR code.
+              </v-expansion-panel-header>
+              <v-expansion-panel-content>
+                <v-text-field
+                  readonly
+                  dense
+                  flat
+                  outlined
+                  label="URL"
+                  data-test="text-shareUrl"
                   :value="formLink"
-                  :size="qrSize"
-                  renderAs="canvas"
-                  :level="qrLevel"
-                />
-              </div>
-            </v-col>
-            <v-col cols="1" class="text-center">
-              <v-tooltip bottom>
-                <template #activator="{ on, attrs }">
-                  <v-btn
-                    color="primary"
-                    icon
-                    @click="downloadQr"
-                    v-bind="attrs"
-                    v-on="on"
-                  >
-                    <v-icon>get_app</v-icon>
-                  </v-btn>
-                </template>
-                <span>Download QR Code</span>
-              </v-tooltip>
-            </v-col>
-          </v-row>
+                >
+                  <template #prepend>
+                    <v-icon>link</v-icon>
+                  </template>
+                  <template #append-outer>
+                    <BaseCopyToClipboard
+                      class="mt-n1"
+                      :copyText="formLink"
+                      tooltipText="Copy URL to clipboard"
+                    />
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <v-btn
+                          class="mt-n1"
+                          color="primary"
+                          :href="formLink"
+                          icon
+                          target="_blank"
+                          v-bind="attrs"
+                          v-on="on"
+                        >
+                          <v-icon class="mr-1">open_in_new</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Open this form</span>
+                    </v-tooltip>
+                  </template>
+                </v-text-field>
+
+                <v-row no-gutters align="end" justify="center">
+                  <v-col cols="auto">
+                    <div class="qrCodeContainer">
+                      <qrcode-vue
+                        :value="formLink"
+                        :size="qrSize"
+                        renderAs="canvas"
+                        :level="qrLevel"
+                      />
+                    </div>
+                  </v-col>
+                  <v-col cols="1" class="text-center">
+                    <v-tooltip bottom>
+                      <template #activator="{ on, attrs }">
+                        <v-btn
+                          color="primary"
+                          icon
+                          @click="downloadQr"
+                          v-bind="attrs"
+                          v-on="on"
+                        >
+                          <v-icon>get_app</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Download QR Code</span>
+                    </v-tooltip>
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-content>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </v-card-text>
 
         <v-card-actions class="justify-center">

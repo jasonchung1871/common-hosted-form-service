@@ -66,6 +66,14 @@
         @customEvent="onCustomEvent"
         :options="viewerOptions"
       />
+      <div
+        v-if="!published"
+        class="text-center"
+      >
+        <h1>This form is not yet published!</h1>
+        <h3>Please contact your form publisher.</h3>
+      </div>
+
       <p v-if="version" class="text-right">Version: {{ version }}</p>
     </div>
   </v-skeleton-loader>
@@ -121,6 +129,7 @@ export default {
       formSchema: {},
       loadingSubmission: false,
       permissions: [],
+      published: true,
       reRenderFormIo: 0,
       saving: false,
       showSubmitConfirmDialog: false,
@@ -224,6 +233,7 @@ export default {
             !response.data.versions ||
             !response.data.versions[0]
           ) {
+            this.published = false;
             throw new Error(
               `No published version found in response. FormID: ${this.formId}`
             );
