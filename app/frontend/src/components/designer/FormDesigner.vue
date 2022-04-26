@@ -453,6 +453,7 @@ export default {
         };
 
         this.formSchema.components.push(newComponent);
+        this.addPatchToHistory();
         this.reRenderFormIo += 1;
       }
     },
