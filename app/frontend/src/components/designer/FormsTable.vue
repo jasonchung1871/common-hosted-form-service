@@ -82,16 +82,48 @@
           :to="{ name: 'FormDesigner', query: { f: item.id, d: item.draft.id } }"
           target="_blank"
         >
-          <v-btn
-            color="primary"
-            text
-            small
-            :disabled="item.draft ? false : true"
-          >
-            <v-icon class="mr-1">edit</v-icon>
-            <span class="d-none d-sm-flex">Edit</span>
-          </v-btn>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <div
+                v-bind="attrs"
+                v-on="on"
+                class="inline-link"
+              >
+                <v-btn
+                  color="primary"
+                  text
+                  small
+                  :disabled="item.draft ? false : true"
+                >
+                  <v-icon class="mr-1">edit</v-icon>
+                  <span class="d-none d-sm-flex">Edit</span>
+                </v-btn>
+              </div>
+            </template>
+            <span>Edit draft version {{ item.draft.id }}</span>
+          </v-tooltip>
         </router-link>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <div
+              v-bind="attrs"
+              v-on="on"
+              class="inline-link"
+            >
+              <v-btn
+                v-if="checkFormSubmit(item) && !item.draft"
+                color="primary"
+                text
+                small
+                :disabled="true"
+              >
+                <v-icon class="mr-1">edit</v-icon>
+                <span class="d-none d-sm-flex">Edit</span>
+              </v-btn>
+            </div>
+          </template>
+          <span>No draft available for edit.</span>
+        </v-tooltip>
         <router-link
           v-if="checkSubmissionView(item)"
           :to="
@@ -176,7 +208,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters('form', ['formList', 'drafts']),
+    ...mapGetters('form', ['drafts', 'formList']),
     filteredFormList() {
       // At this point, we're only showing forms you can manage or view submissions of here
       // This may get reconceptualized in the future to different pages or something
@@ -256,5 +288,9 @@ export default {
 }
 .description-icon:focus::after {
   opacity: 0;
+}
+
+.inline-link {
+  display: inline;
 }
 </style>
