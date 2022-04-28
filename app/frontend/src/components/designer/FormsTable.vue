@@ -47,6 +47,9 @@
       :loading="loading"
       loading-text="Loading... Please wait"
     >
+      <template #[`item.published`]="{ item }">
+        <span>{{ item.published ? `${item.published}` : 'Loading..' }}</span>
+      </template>
       <template #[`item.name`]="{ item }">
         <router-link
           :to="{
@@ -100,7 +103,7 @@
                 </v-btn>
               </div>
             </template>
-            <span>Edit draft version {{ item.draft.id }}</span>
+            <span>Edit draft version {{ item.draft.version }}</span>
           </v-tooltip>
         </router-link>
         <v-tooltip bottom>
@@ -177,6 +180,7 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
+import { formService } from '@/services';
 import {
   checkFormManage,
   checkFormSubmit,
@@ -190,7 +194,8 @@ export default {
       // Assigning width: '1%' to dynamically assign width to the Table's Columns as described by this post on Stack Overflow:
       // https://stackoverflow.com/a/51569928
       headers: [
-        { text: 'Form Title', align: 'start', value: 'name', width: '1%', },
+        { text: 'Published Version', align: 'start', value: 'published', width: '0.2%', },
+        { text: 'Form Title', value: 'name', width: '1%', },
         {
           text: 'Actions',
           align: 'end',
@@ -218,6 +223,7 @@ export default {
     },
   },
   methods: {
+    ...mapActions('notification', ['addNotification']),
     ...mapActions('form', ['getFormsForCurrentUser', 'fetchDrafts', 'fetchVersion']),
     checkFormManage: checkFormManage,
     checkFormSubmit: checkFormSubmit,
@@ -236,12 +242,44 @@ export default {
       (f) => checkFormManage(f) || checkSubmissionView(f)
     );
     for (const f of formList) {
-      await this.fetchDrafts(f.id);
-      if (this.drafts.length > 0) {
-        this.drafts.sort((a, b) => a.updatedAt > b.updatedAt);
-        // Find a draft that isn't published so we can edit it
+      try {
         let idx = this.formList.findIndex(o => o.id === f.id);
-        this.formList[idx].draft = this.drafts[0];
+        let response = undefined;
+        let publishedVersion = undefined;
+        let versions = undefined;
+
+        response = await formService.readPublished(f.id);
+        if (
+          response.data &&
+          response.data.versions &&
+          response.data.versions[0]
+        ) {
+          publishedVersion = response.data.versions[0].id;
+        }
+
+        response = await formService.listVersions(f.id);
+        versions = (response.data) ? response.data : undefined;
+        if (
+          response.data
+        ) {
+          versions = response.data;
+        }
+
+        this.formList[idx].published = (publishedVersion !== undefined)
+          ? (versions) ? versions.findIndex(o => o.id === publishedVersion) + 1 : 1
+          : 'Unpublished';
+
+        await this.fetchDrafts(f.id);
+        if (this.drafts.length > 0) {
+          this.drafts.sort((a, b) => a.updatedAt > b.updatedAt);
+          // Find a draft that isn't published so we can edit it
+          this.formList[idx].draft = this.drafts[0];
+          this.formList[idx].draft.version = (versions) ? versions.length + 1 : 1;
+        }
+      } catch (error) {
+        this.addNotification({
+          message: `${error}`,
+        });
       }
     }
     this.loading = false;
