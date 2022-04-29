@@ -47,9 +47,6 @@
       :loading="loading"
       loading-text="Loading... Please wait"
     >
-      <template #[`item.published`]="{ item }">
-        <span>{{ item.published ? `${item.published}` : 'Loading..' }}</span>
-      </template>
       <template #[`item.name`]="{ item }">
         <router-link
           :to="{
@@ -79,6 +76,13 @@
           description
         </v-icon>
       </template>
+      <template #[`item.published`]="{ item }">
+        <span
+          class="primary--text font-weight-bold"
+        >
+          {{ item.published ? (typeof item.published !== 'string' ? `V.${item.published} PUBLISHED` : item.published) : 'Loading..' }}
+        </span>
+      </template>
       <template #[`item.actions`]="{ item }">
         <router-link
           v-if="checkFormSubmit(item) && item.draft"
@@ -99,7 +103,7 @@
                   :disabled="item.draft ? false : true"
                 >
                   <v-icon class="mr-1">edit</v-icon>
-                  <span class="d-none d-sm-flex">Edit</span>
+                  <span class="d-none d-sm-flex">Edit V.{{item.draft.version}}</span>
                 </v-btn>
               </div>
             </template>
@@ -121,7 +125,7 @@
                 :disabled="true"
               >
                 <v-icon class="mr-1">edit</v-icon>
-                <span class="d-none d-sm-flex">Edit</span>
+                <span class="d-none d-sm-flex">No draft</span>
               </v-btn>
             </div>
           </template>
@@ -194,15 +198,15 @@ export default {
       // Assigning width: '1%' to dynamically assign width to the Table's Columns as described by this post on Stack Overflow:
       // https://stackoverflow.com/a/51569928
       headers: [
-        { text: 'Published Version', align: 'start', value: 'published', width: '0.2%', },
-        { text: 'Form Title', value: 'name', width: '1%', },
+        { text: 'Form Title', align: 'start', value: 'name', width: '3%', },
+        { text: 'Published Version', value: 'published', width: '0.3%', divider: true, },
         {
           text: 'Actions',
           align: 'end',
           value: 'actions',
           filterable: false,
           sortable: false,
-          width: '1%',
+          width: '1.5%',
         },
       ],
       loading: true,
@@ -262,7 +266,9 @@ export default {
         if (
           response.data
         ) {
-          versions = response.data;
+          // When fetching the versions in the manage form page, the API will retrieve
+          // the versions in descending order, so we're reversing the order.
+          versions = response.data.sort().reverse();
         }
 
         this.formList[idx].published = (publishedVersion !== undefined)
@@ -331,4 +337,14 @@ export default {
 .inline-link {
   display: inline;
 }
+
+.version-gutter {
+  content: '';
+  height: 50%;
+  width: 2px;
+  float: right;
+  background-color: #00000050;
+  margin-left: 0.5em;
+}
+
 </style>
