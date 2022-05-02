@@ -78,10 +78,13 @@
       </template>
       <template #[`item.published`]="{ item }">
         <span
-          class="primary--text font-weight-bold"
+          class="disabled-text font-weight-bold"
         >
           {{ item.published ? (typeof item.published !== 'string' ? `V.${item.published} PUBLISHED` : item.published) : 'Loading..' }}
         </span>
+      </template>
+      <template #[`item.gutter`]>
+        <v-divider class="version-gutter" inset vertical></v-divider>
       </template>
       <template #[`item.actions`]="{ item }">
         <router-link
@@ -198,15 +201,15 @@ export default {
       // Assigning width: '1%' to dynamically assign width to the Table's Columns as described by this post on Stack Overflow:
       // https://stackoverflow.com/a/51569928
       headers: [
-        { text: 'Form Title', align: 'start', value: 'name', width: '3%', },
-        { text: 'Published Version', value: 'published', width: '0.3%', divider: true, },
+        { text: 'Form Title', align: 'start', value: 'name', width: '1%', },
+        { text: 'Status', value: 'published', width: '0.05%', },
+        { value: 'gutter', align: 'center', width: '0%', filterable: false, sortable: false, },
         {
           text: 'Actions',
-          align: 'end',
           value: 'actions',
           filterable: false,
           sortable: false,
-          width: '1.5%',
+          width: '0.375%',
         },
       ],
       loading: true,
@@ -338,13 +341,13 @@ export default {
   display: inline;
 }
 
+.disabled-text {
+  color: rgba(0,0,0,.26) !important;
+}
+
 .version-gutter {
-  content: '';
-  height: 50%;
-  width: 2px;
-  float: right;
-  background-color: #00000050;
-  margin-left: 0.5em;
+  height: 2.5em;
+  line-height: 2.5em;
 }
 
 </style>
