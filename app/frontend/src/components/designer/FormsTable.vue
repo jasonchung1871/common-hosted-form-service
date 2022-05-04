@@ -202,14 +202,14 @@ export default {
       // https://stackoverflow.com/a/51569928
       headers: [
         { text: 'Form Title', align: 'start', value: 'name', width: '1%', },
-        { text: 'Status', value: 'published', width: '0.05%', },
+        { text: 'Status', align: 'end', value: 'published', width: '0.05%', },
         { value: 'gutter', align: 'center', width: '0%', filterable: false, sortable: false, },
         {
           text: 'Actions',
           value: 'actions',
           filterable: false,
           sortable: false,
-          width: '0.375%',
+          width: '0.45%',
         },
       ],
       loading: true,
@@ -342,12 +342,18 @@ export default {
 }
 
 .disabled-text {
+  width: 100%!important;
+  text-align: center;
   color: rgba(0,0,0,.26) !important;
 }
 
 .version-gutter {
   height: 2.5em;
   line-height: 2.5em;
+}
+
+.submissions-table >>> tbody tr td .v-btn span.v-btn__content span {
+  min-width: 80px!important;
 }
 
 </style>
