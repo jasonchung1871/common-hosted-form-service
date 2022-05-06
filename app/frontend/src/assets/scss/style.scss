@@ -566,3 +566,27 @@ a,
   color: white;
   background: $bcgov-blue;
 }
+
+.builder-component > .component-btn-group {
+  background: #E4F2FF 0% 0% no-repeat padding-box;
+  margin: 0;
+  padding: 2px 4px 2px 4px;
+}
+
+.builder-component > .component-btn-group > div.btn.component-settings-button {
+  margin: 4px;
+  box-shadow: none;
+  width: 33px;
+  height: 33px;
+}
+
+.builder-component > .component-btn-group > div.btn.component-settings-button > i.fa {
+  letter-spacing: 0;
+  font-weight: lighter;
+  font-size: 22px;
+  line-height: 1.2em;
+}
+
+.builder-component > .component-btn-group > div.btn.component-settings-button:not(.component-settings-button-edit):not(.component-settings-button-remove) {
+  background: white;
+}
