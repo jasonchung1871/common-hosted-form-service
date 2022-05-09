@@ -80,7 +80,7 @@
         <span
           class="disabled-text font-weight-bold"
         >
-          {{ item.published ? (typeof item.published !== 'string' ? `V.${item.published} PUBLISHED` : item.published) : 'Loading..' }}
+          {{ item.published ? 'Published' : 'Unpublished' }}
         </span>
       </template>
       <template #[`item.gutter`]>
@@ -106,11 +106,11 @@
                   :disabled="item.draft ? false : true"
                 >
                   <v-icon class="mr-1">edit</v-icon>
-                  <span class="d-none d-sm-flex">Edit V.{{item.draft.version}}</span>
+                  <span class="d-none d-sm-flex">Edit draft</span>
                 </v-btn>
               </div>
             </template>
-            <span>Edit draft version {{ item.draft.version }}</span>
+            <span>Edit draft</span>
           </v-tooltip>
         </router-link>
         <v-tooltip bottom>
@@ -253,7 +253,6 @@ export default {
         let idx = this.formList.findIndex(o => o.id === f.id);
         let response = undefined;
         let publishedVersion = undefined;
-        let versions = undefined;
 
         response = await formService.readPublished(f.id);
         if (
@@ -264,26 +263,13 @@ export default {
           publishedVersion = response.data.versions[0].id;
         }
 
-        response = await formService.listVersions(f.id);
-        versions = (response.data) ? response.data : undefined;
-        if (
-          response.data
-        ) {
-          // When fetching the versions in the manage form page, the API will retrieve
-          // the versions in descending order, so we're reversing the order.
-          versions = response.data.sort().reverse();
-        }
-
-        this.formList[idx].published = (publishedVersion !== undefined)
-          ? (versions) ? versions.findIndex(o => o.id === publishedVersion) + 1 : 1
-          : 'Unpublished';
+        this.formList[idx].published = (publishedVersion !== undefined) ? true : false;
 
         await this.fetchDrafts(f.id);
         if (this.drafts.length > 0) {
           this.drafts.sort((a, b) => a.updatedAt > b.updatedAt);
           // Find a draft that isn't published so we can edit it
           this.formList[idx].draft = this.drafts[0];
-          this.formList[idx].draft.version = (versions) ? versions.length + 1 : 1;
         }
       } catch (error) {
         this.addNotification({
