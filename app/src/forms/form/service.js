@@ -1,4 +1,5 @@
 const Problem = require('api-problem');
+const { applyPatch } = require('fast-json-patch');
 const { ref } = require('objection');
 const { v4: uuidv4 } = require('uuid');
 
@@ -444,9 +445,10 @@ const service = {
     let trx;
     try {
       const obj = await service.readDraft(formVersionDraftId);
+      const form = (data.diff && typeof data.diff === 'boolean' && data.diff === true) ? applyPatch(obj.schema, data.schema).newDocument : data.schema;
       trx = await FormVersionDraft.startTransaction();
       await FormVersionDraft.query(trx).patchAndFetchById(formVersionDraftId, {
-        schema: data.schema,
+        schema: form,
         formVersionId: data.formVersionId,
         updatedBy: currentUser.usernameIdp
       });

@@ -235,6 +235,7 @@ export default {
         history: [],
         index: -1,
         MAX_PATCHES: 30,
+        headSchema: null,
         originalSchema: null,
         redoClicked: false,
         undoClicked: false,
@@ -380,6 +381,7 @@ export default {
         if (this.patch.history.length === 0) {
           // We are fetching an existing form, so we get the original schema here because
           // using the original schema in the mount will give you the default schema
+          this.patch.headSchema = deepClone(this.formSchema);
           this.patch.originalSchema = deepClone(this.formSchema);
         }
       } catch (error) {
@@ -521,7 +523,7 @@ export default {
         if (this.patch.history.length > this.patch.MAX_PATCHES) {
           // We need to set the original schema to the first patch
           const newHead = this.getPatch(0);
-          this.patch.originalSchema = newHead;
+          this.patch.headSchema = newHead;
           this.patch.history.shift();
           --this.patch.index;
         }
@@ -531,7 +533,7 @@ export default {
     },
     getPatch(idx) {
       // Generate the form from the original schema
-      let form = deepClone(this.patch.originalSchema);
+      let form = deepClone(this.patch.headSchema);
       if (this.patch.index > -1 && this.patch.history.length > 0) {
         // Apply all patches until we reach the requested patch
         for (let i = -1; i < idx; i++) {
@@ -618,6 +620,7 @@ export default {
         Array.isArray(this.submissionReceivedEmails)
           ? this.submissionReceivedEmails
           : [];
+
       const response = await formService.createForm({
         name: this.name,
         description: this.description,
@@ -658,14 +661,21 @@ export default {
       });
     },
     async schemaUpdateExistingDraft() {
-      await formService.updateDraft(this.formId, this.draftId, {
-        schema: this.formSchema,
-      });
-      // Update this route with saved flag
-      this.$router.replace({
-        name: 'FormDesigner',
-        query: { ...this.$route.query, sv: true },
-      });
+      // Check if there's a difference between the form before we clicked save or when the form was first loaded
+      const formDiff = compare(this.patch.originalSchema, this.formSchema);
+      if(formDiff.length > 0) {
+        // Instead of sending the entire formSchema, we just send the difference
+        await formService.updateDraft(this.formId, this.draftId, {
+          schema: formDiff,
+          diff: true,
+        });
+        this.patch.originalSchema = deepClone(this.formSchema);
+        // Update this route with saved flag
+        this.$router.replace({
+          name: 'FormDesigner',
+          query: { ...this.$route.query, sv: true },
+        });
+      }
     },
     // ----------------------------------------------------------------------------------/ Saving Schema
   },
@@ -678,6 +688,7 @@ export default {
   mounted() {
     if (!this.formId) {
       // We are creating a new form, so we obtain the original schema here.
+      this.patch.headSchema = deepClone(this.formSchema);
       this.patch.originalSchema = deepClone(this.formSchema);
     }
   },
