@@ -28,6 +28,17 @@
           <hr style="height: 2px; border: none;background-color:#707070C1;margin-top:5px;"/>
           <v-row>
             <v-col>
+              <p class="subTitleObjectStyle">Select the form version</p>
+              <v-select
+                v-model="version"
+                item-text="version"
+                :items="form.versions"
+                item-value="first"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
               <p class="subTitleObjectStyle">Select the submission date</p>
               <v-radio-group v-model="dataFields" hide-details="auto">
                 <v-radio label="All data/fields" :value="false">
@@ -187,7 +198,7 @@ export default {
       exportFormat: 'csv',
       startDate: moment(Date()).format('YYYY-MM-DD'),
       startDateMenu: false,
-
+      version: 0,
     };
   },
   computed: {
@@ -217,6 +228,7 @@ export default {
               .utc()
               .format()
             : undefined;
+        this.userFormPreferences.preferences.version = this.version;
         const response = await formService.exportSubmissions(
           this.form.id,
           this.exportFormat,
@@ -226,7 +238,7 @@ export default {
             // deleted: true,
             // drafts: true
           },
-          this.dataFields?this.userFormPreferences.preferences:undefined
+          this.userFormPreferences.preferences
         );
         if (response && response.data) {
           const blob = new Blob([response.data], {
@@ -263,6 +275,11 @@ export default {
         this.endDate= moment(Date()).format('YYYY-MM-DD');
         this.startDate= moment(Date()).format('YYYY-MM-DD');
       }
+    }
+  },
+  mounted() {
+    if (this.form && this.form.versions && this.form.versions.length > 0) {
+      this.version = this.form.versions[0].version;
     }
   }
 };

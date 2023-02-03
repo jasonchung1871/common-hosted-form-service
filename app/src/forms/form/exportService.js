@@ -31,6 +31,11 @@ class SubmissionData extends Model {
           query.where('draft', false);
         }
       },
+      filterVersion(query, value) {
+        if (value) {
+          query.where('version', value);
+        }
+      },
       orderDefault(builder) {
         builder.orderBy('createdAt', 'DESC');
       }
@@ -230,6 +235,7 @@ const service = {
       .modify('filterCreatedAt', preference&&preference.minDate, preference&&preference.maxDate)
       .modify('filterDeleted', params.deleted)
       .modify('filterDrafts', params.drafts)
+      .modify('filterVersion', params.version)
       .modify('orderDefault');
     if(params.columns){
       for(let index in submissionData) {
