@@ -1,6 +1,7 @@
-const jsonexport = require('jsonexport');
+const jsonexport = require('@bc_gov_forminators/json_to_csv_export');
 const { Model } = require('objection');
 const Problem = require('api-problem');
+const {flattenComponents} = require('../common/utils');
 
 const { Form, FormVersion } = require('../common/models');
 
@@ -62,6 +63,7 @@ const service = {
      * @param {Object} obj A form.io schema or subset of it
      * @returns {String[]} An array of strings
      */
+
     const findFields = (obj) => {
       const fields = [];
       const fieldsDefinedInSubmission = ['datamap', 'tree'];
@@ -70,7 +72,7 @@ const service = {
       if (obj.key && obj.input && !obj.hidden && obj.type !== 'button') {
 
         // if the fieldname we want is defined in component's sub-values
-        const componentsWithSubValues = ['simplecheckboxes', 'selectboxes', 'survey', 'address'];
+        const componentsWithSubValues = ['simplecheckboxes', 'selectboxes', 'survey', 'address',];
         if (obj.type && componentsWithSubValues.includes(obj.type)) {
           // for survey component, get field name from obj.questions.value
           if (obj.type === 'survey') {
@@ -95,11 +97,11 @@ const service = {
          * also exclude fieldnames defined in submission
          * eg datagrid, container, tree
          */
+
         else if (!obj.tree && !fieldsDefinedInSubmission.includes(obj.type)) {
           // Add current field key
           fields.push(obj.key);
         }
-
       }
 
 
@@ -124,10 +126,11 @@ const service = {
       return fields;
     };
 
+
     return findFields(schema);
   },
 
-  _buildCsvHeaders: async (form, data) => {
+  _buildCsvHeaders: async (form,  data, columns) => {
     /**
      * get column order to match field order in form design
      * object key order is not preserved when submission JSON is saved to jsonb field type in postgres.
@@ -135,18 +138,25 @@ const service = {
 
     // get correctly ordered field names (keys) from latest form version
     const latestFormDesign = await service._readLatestFormSchema(form.id);
-    const fieldNames = await service._readSchemaFields(latestFormDesign);
 
+    const fieldNames = flattenComponents(latestFormDesign.components);
+
+    //const fieldNames = await service._readSchemaFields(latestFormDesign);
+
+    let filteredFieldName;
+
+    if(Array.isArray(columns)) {
+      filteredFieldName = fieldNames.filter(fieldName => (Array.isArray(columns) && columns.includes(fieldName))|| (Array.isArray(columns) && columns.includes(fieldName.split('.')[0])));
+    }
     // get meta properties in 'form.<child.key>' string format
-    const metaKeys = Object.keys(data[0].form);
+    const metaKeys = Object.keys(data.length>0&&data[0].form);
     const metaHeaders = metaKeys.map(x => 'form.' + x);
-
     /**
      * make other changes to headers here if required
      * eg: use field labels as headers
      * see: https://github.com/kaue/jsonexport
      */
-    return metaHeaders.concat(fieldNames);
+    return metaHeaders.concat(filteredFieldName||fieldNames);
   },
 
   _exportType: (params = {}) => {
@@ -163,10 +173,7 @@ const service = {
     return `${form.snake()}_${type}.${format}`.toLowerCase();
   },
 
-  _submissionsColumns: (form, params = {}) => {
-    if (params.columns) {
-      return params.columns;
-    }
+  _submissionsColumns: (form) => {
     // Custom columns not defined - return default column selection behavior
     let columns = [
       'confirmationId',
@@ -189,14 +196,14 @@ const service = {
     return Form.query().findById(formId).throwIfNotFound();
   },
 
-  _getData: (exportType, form, params = {}) => {
+  _getData: async(exportType, form, params = {}) => {
     if (EXPORT_TYPES.submissions === exportType) {
       return service._getSubmissions(form, params);
     }
     return {};
   },
 
-  _formatData: async (exportFormat, exportType, form, data = {}) => {
+  _formatData: async (exportFormat, exportType, form, data = {}, columns) => {
     // inverting content structure nesting to prioritize submission content clarity
     const formatted = data.map(obj => {
       const { submission, ...form } = obj;
@@ -205,7 +212,7 @@ const service = {
 
     if (EXPORT_TYPES.submissions === exportType) {
       if (EXPORT_FORMATS.csv === exportFormat) {
-        return await service._formatSubmissionsCsv(form, formatted);
+        return await service._formatSubmissionsCsv(form, formatted, columns);
       }
       if (EXPORT_FORMATS.json === exportFormat) {
         return await service._formatSubmissionsJson(form, formatted);
@@ -214,18 +221,39 @@ const service = {
     throw new Problem(422, { detail: 'Could not create an export for this form. Invalid options provided' });
   },
 
-  _getSubmissions: (form, params) => {
+  _getSubmissions: async (form, params) => {
+    let preference = params.preference?JSON.parse(params.preference):undefined;
     // params for this export include minDate and maxDate (full timestamp dates).
-    return SubmissionData.query()
+    let submissionData = await SubmissionData.query()
       .column(service._submissionsColumns(form, params))
       .where('formId', form.id)
-      .modify('filterCreatedAt', params.minDate, params.maxDate)
+      .modify('filterCreatedAt', preference&&preference.minDate, preference&&preference.maxDate)
       .modify('filterDeleted', params.deleted)
       .modify('filterDrafts', params.drafts)
       .modify('orderDefault');
+    if(params.columns){
+      for(let index in submissionData) {
+        let keys = Object.keys(submissionData[index].submission);
+        for(let key of keys) {
+          if(Array.isArray(params.columns) && !params.columns.includes(key)) {
+            delete submissionData[index].submission[key];
+          }
+        }
+      }
+    } else {
+      for(let index in submissionData) {
+        let keys = Object.keys(submissionData[index].submission);
+        for(let key of keys) {
+          if(key==='submit') {
+            delete submissionData[index].submission[key];
+          }
+        }
+      }
+    }
+    return submissionData;
   },
 
-  _formatSubmissionsJson: (form, data) => {
+  _formatSubmissionsJson: (form,data) => {
     return {
       data: data,
       headers: {
@@ -235,7 +263,7 @@ const service = {
     };
   },
 
-  _formatSubmissionsCsv: async (form, data) => {
+  _formatSubmissionsCsv: async (form, data, columns) => {
     try {
       const options = {
         fillGaps: true,
@@ -256,9 +284,8 @@ const service = {
         // }
 
         // re-organize our headers to change column ordering or header labels, etc
-        headers: await service._buildCsvHeaders(form, data)
+        headers: await service._buildCsvHeaders(form, data,columns)
       };
-
       const csv = await jsonexport(data, options);
       return {
         data: csv,
@@ -287,10 +314,10 @@ const service = {
     // what output format?
     const exportType = service._exportType(params);
     const exportFormat = service._exportFormat(params);
-
+    const columns = params.columns?params.columns:undefined;
     const form = await service._getForm(formId);
     const data = await service._getData(exportType, form, params);
-    const result = await service._formatData(exportFormat, exportType, form, data);
+    const result = await service._formatData(exportFormat, exportType, form, data, columns);
 
     return { data: result.data, headers: result.headers };
   }
