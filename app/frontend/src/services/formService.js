@@ -419,4 +419,14 @@ export default {
   async getFCProactiveHelpImageUrl(componentId) {
     return appAxios().get(`${ApiRoutes.FORMS}/formcomponents/proactivehelp/imageUrl/${componentId}`);
   },
+
+  /**
+   * @function listFormInvitations
+   * Get any form invitations for a form
+   * @param {string} formId The form uuid
+   * @returns {Promise} An axios response
+   */
+  listFormInvitations(formId) {
+    return appAxios().get(`${ApiRoutes.FORMS}/${formId}/invitations`);
+  },
 };

@@ -188,6 +188,20 @@
       </template>
     </v-data-table>
 
+
+    <!-- team table -->
+    <v-data-table
+      class="team-table"
+      show-select
+      :single-select="true"
+      :headers="invitationHeaders"
+      :items="tableInvitationData"
+      :loading="loading || updating"
+      loading-text="Loading... Please wait"
+      no-data-text="Failed to load form invitations."
+    >
+    </v-data-table>
+
     <BaseDialog
       v-model="showDeleteDialog"
       type="CONTINUE"
@@ -227,7 +241,7 @@ export default {
   },
   computed: {
     ...mapFields('form', ['form.userType']),
-    ...mapGetters('form', ['permissions']),
+    ...mapGetters('form', ['form', 'permissions']),
     ...mapGetters('auth', ['user']),
     canManageTeam() {
       return this.permissions.includes(FormPermissions.TEAM_UPDATE);
@@ -236,26 +250,29 @@ export default {
   },
   data() {
     return {
-      edited: false, // Does the table align with formUsers?
-      headers: [],
-      formUsers: [],
-      isAddingUsers: false,
-      loading: true,
-      selectAllCheckBox:false,
-      roleList: [],
-      selectedItemToDelete:[],
-      itemToDelete: new Set(),
-      search: '',
       deleteConfirmationMsg:'Are you sure you want to remove this team member?',
+      edited: false, // Does the table align with formUsers?
+      formInvitations: [],
+      formUsers: [],
+      headers: [],
+      invitationHeaders: [],
+      isAddingUsers: false,
+      itemToDelete: new Set(),
+      loading: true,
+      roleList: [],
+      selectAllCheckBox:false,
+      selectedItemToDelete:[],
+      search: '',
       showDeleteDialog: false,
       tableData: [],
+      tableInvitationData: [],
       userId: '',
       updateTableKey: 0,
       updating: false,
     };
   },
   methods: {
-    ...mapActions('form', ['fetchForm', 'getFormPermissionsForUser']),
+    ...mapActions('form', ['fetchForm', 'getFormPermissionsForUser', 'getFormInvitations']),
     ...mapActions('notifications', ['addNotification']),
     addingUsers(adding) {
       this.isAddingUsers = adding;
@@ -306,7 +323,8 @@ export default {
               filterable: false,
               text: role.display,
               value: role.code,
-              description: role.description
+              description: role.description,
+              width: '5px'
             }))
             .sort((a, b) =>
               this.roleOrder.indexOf(a.value) > this.roleOrder.indexOf(b.value)
@@ -315,6 +333,30 @@ export default {
             )
         )
         .concat({ text: '', value: 'actions', width: '1rem' });
+    },
+    createInvitationHeaders() {
+      const invitationHeaders = [
+        { text: '', value: 'form_checkbox', width: '80px', maxWidth: '85px', align: 'left' },
+        { text: 'Invitation Code', value: 'code', width: '100px' },
+        { text: 'Identity Provider', value: 'identityProvider', width: '100px' }
+      ];
+      this.invitationHeaders = invitationHeaders
+        .concat(
+          this.roleList
+            .filter((role) => this.userType === IdentityMode.TEAM || role.code !== FormRoleCodes.FORM_SUBMITTER)
+            .map((role) => ({
+              filterable: false,
+              text: role.display,
+              value: role.code,
+              description: role.description,
+            }))
+            .sort((a, b) =>
+              this.roleOrder.indexOf(a.value) > this.roleOrder.indexOf(b.value)
+                ? 1
+                : -1
+            )
+        )
+        .concat({ text: '', value: 'actions', width: '1rem', sortable: false });
     },
     createTableData() {
       this.tableData = this.formUsers.map((user) => {
@@ -333,6 +375,19 @@ export default {
 
       this.edited = false;
       this.selectedItemToDelete = new Array(this.tableData.length).fill(false);
+    },
+    createInvitationTableData() {
+      this.tableInvitationData = this.formInvitations.map((formInvitation) => {
+        const row = {
+          form_checkbox: true,
+          code: formInvitation.code,
+          identityProvider: formInvitation.identityProvider,
+        };
+        this.roleList
+          .map((role) => role.code)
+          .forEach((role) => (row[role] = this.formInvitations.some((fi) => fi.role === role)));
+        return row;
+      });
     },
     selectAllUsersToDelete() {
       this.selectedItemToDelete.fill(this.selectAllCheckBox);
@@ -422,6 +477,21 @@ export default {
         this.roleList = [];
       } finally {
         this.createHeaders();
+      }
+    },
+    async getInvitationsList(formId) {
+      try {
+        await this.getFormInvitations(formId);
+        this.formInvitations = this.form.invitations;
+      } catch (error) {
+        this.addNotification({
+          message: error.message,
+          consoleError: `Error getting list of invitations: ${error}`,
+        });
+        this.formInvitations = [];
+      } finally {
+        this.createInvitationHeaders();
+        this.createInvitationTableData();
       }
     },
     onCheckboxToggle(userId, header) {
@@ -566,9 +636,11 @@ export default {
     await Promise.all([
       this.fetchForm(this.formId),
       this.getFormPermissionsForUser(this.formId),
-      this.getRolesList()
+      this.getRolesList(),
+      this.getInvitationsList(this.formId)
     ]);
     await this.getFormUsers(),
+
     this.loading = false;
   },
 };

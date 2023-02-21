@@ -138,4 +138,8 @@ routes.get('/formcomponents/proactivehelp/imageUrl/:componentId', async (req, re
   await controller.getFCProactiveHelpImageUrl(req, res, next);
 });
 
+routes.get('/:formId/invitations', apiAccess, hasFormPermissions([P.TEAM_UPDATE]), async (req, res, next) => {
+  await controller.listFormInvitations(req, res, next);
+});
+
 module.exports = routes;

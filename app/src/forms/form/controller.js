@@ -251,4 +251,12 @@ module.exports = {
     }
   },
 
+  listFormInvitations: async (req, res, next) => {
+    try {
+      const response = await service.listFormInvitations(req.params.formId);
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

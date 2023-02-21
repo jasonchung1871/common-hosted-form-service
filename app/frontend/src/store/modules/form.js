@@ -19,6 +19,7 @@ const genInitialForm = () => ({
   submissionReceivedEmails: [],
   userType: IdentityMode.TEAM,
   versions: [],
+  invitations: [],
 });
 
 /**
@@ -120,6 +121,9 @@ export default {
     SET_FCPROACTIVEHELPIMAGEURL(state,fcProactiveHelpImageUrl)
     {
       state.fcProactiveHelpImageUrl = fcProactiveHelpImageUrl;
+    },
+    SET_FORM_INVITATIONS(state, invitations) {
+      state.form.invitations = invitations;
     },
   },
   actions: {
@@ -501,6 +505,19 @@ export default {
       if (!state.form || state.form.isDirty === isDirty) return; // don't do anything if not changing the val (or if form is blank for some reason)
       window.onbeforeunload = isDirty ? () => true : null;
       commit('SET_FORM_DIRTY', isDirty);
+    },
+    async getFormInvitations({ commit, dispatch }, formId) {
+      try {
+        commit('SET_FORM_INVITATIONS', []);
+        // Get the forms based on the user's permissions
+        const response = await formService.listFormInvitations(formId);
+        commit('SET_FORM_INVITATIONS', response.data);
+      } catch (error) {
+        dispatch('notifications/addNotification', {
+          message: 'An error occurred while fetching your invitations for this form.',
+          consoleError: `Error getting invitations using formID ${formId}: ${error}`,
+        }, { root: true });
+      }
     },
   },
 };

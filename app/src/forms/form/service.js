@@ -20,6 +20,7 @@ const {
 } = require('../common/models');
 const { falsey, queryUtils } = require('../common/utils');
 const { Permissions, Roles, Statuses } = require('../common/constants');
+const FormInvitation = require('../common/models/tables/formInvitation');
 const Rolenames = [Roles.OWNER, Roles.TEAM_MANAGER, Roles.FORM_DESIGNER, Roles.SUBMISSION_REVIEWER, Roles.FORM_SUBMITTER];
 
 const service = {
@@ -609,6 +610,14 @@ const service = {
     return {};
   },
 
+  // -----------------------------------------------------------------------------
+  // Invitations
+  // -----------------------------------------------------------------------------
+  listFormInvitations: (formId) => {
+    return FormInvitation.query()
+      .where('formId', formId)
+      .modify('orderDescending');
+  }
 };
 
 module.exports = service;
