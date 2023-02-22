@@ -4,6 +4,8 @@ module.exports = {
   Form: require('./tables/form'),
   FormApiKey: require('./tables/formApiKey'),
   FormIdentityProvider: require('./tables/formIdentityProvider'),
+  FormInvitation: require('./tables/formInvitation'),
+  FormInvitationRole: require('./tables/formInvitationRole'),
   FormSubmission: require('./tables/formSubmission'),
   FormStatusCode: require('./tables/formStatusCode'),
   FormSubmissionStatus: require('./tables/formSubmissionStatus'),

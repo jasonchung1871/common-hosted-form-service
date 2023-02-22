@@ -7,6 +7,8 @@ const {
   Form,
   FormApiKey,
   FormIdentityProvider,
+  FormInvitation,
+  FormInvitationRole,
   FormRoleUser,
   FormVersion,
   FormVersionDraft,
@@ -20,7 +22,6 @@ const {
 } = require('../common/models');
 const { falsey, queryUtils } = require('../common/utils');
 const { Permissions, Roles, Statuses } = require('../common/constants');
-const FormInvitation = require('../common/models/tables/formInvitation');
 const Rolenames = [Roles.OWNER, Roles.TEAM_MANAGER, Roles.FORM_DESIGNER, Roles.SUBMISSION_REVIEWER, Roles.FORM_SUBMITTER];
 
 const service = {
@@ -616,7 +617,45 @@ const service = {
   listFormInvitations: (formId) => {
     return FormInvitation.query()
       .where('formId', formId)
+      .allowGraph('[formInvitationRoles]')
+      .withGraphFetched('formInvitationRoles(orderDescending)')
       .modify('orderDescending');
+  },
+
+  updateFormInvitations: async (invitationId, formId, data, currentUser) => {
+    // check this in middleware? 422 in valid params
+    if (!invitationId || 0 === invitationId.length) {
+      throw new Error();
+    }
+
+    let trx;
+    try {
+      await service.readForm(formId);
+      trx = await FormInvitationRole.startTransaction();
+      // remove existing mappings...
+      await FormInvitationRole.query(trx)
+        .delete()
+        .where('invitationId', invitationId);
+
+      // create the batch and insert...
+      if (!Array.isArray(data)) {
+        data = [data];
+      }
+      // remove any data that isn't for this userId...
+      data = data.filter(d => d.invitationId === invitationId);
+
+      // add an id and save them
+      const items = data.map(d => { return { id: uuidv4(), createdBy: currentUser.usernameIdp, ...d }; });
+      if(items && items.length) await FormInvitationRole.query(trx).insert(items);
+      else await FormInvitation.query(trx).deleteById(invitationId).throwIfNotFound();
+      await trx.commit();
+      // return the new mappings
+      const result = await service.listFormInvitations(formId);
+      return result;
+    } catch (err) {
+      if (trx) await trx.rollback();
+      throw err;
+    }
   }
 };
 

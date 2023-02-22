@@ -193,13 +193,51 @@
     <v-data-table
       class="team-table"
       show-select
-      :single-select="true"
+      v-model="selectedInvitations"
+      :single-select="false"
       :headers="invitationHeaders"
       :items="tableInvitationData"
+      item-key="id"
       :loading="loading || updating"
       loading-text="Loading... Please wait"
       no-data-text="Failed to load form invitations."
     >
+      <!-- custom header markup - add tooltip to heading that are roles -->
+      <template v-for="(h) in headers" v-slot:[`header.${h.value}`]="{ headers }">
+        <v-tooltip v-if="h.value !== 'form_checkbox'" :key="h.value" bottom>
+          <template v-slot:activator="{ on }">
+            <span v-on="on">{{ h.text }}</span>
+          </template>
+          <span>{{ h.description }}</span>
+        </v-tooltip>
+      </template>
+      <template v-slot:[`header.actions`]>
+        <v-btn @click="onRemoveInvitationClick()"
+               color="red"
+               :disabled="selectedInvitations.length < 1"
+               icon
+        >
+          <v-icon>remove_circle</v-icon>
+        </v-btn>
+      </template>
+      <template
+        v-for="(role) in roleList" v-slot:[`item.${role.code}`]="{ item }">
+        <v-checkbox
+          v-model="item[role.code]"
+          v-ripple
+          :disabled="updating"
+          :key="role.code"
+        ></v-checkbox>
+      </template>
+      <template v-slot:[`item.actions`]="{ item }">
+        <v-btn @click="onRemoveInvitationClick()"
+               color="red"
+               :disabled="selectedInvitations.length > 0 ? selectedInvitations[tableInvitationData.indexOf(item)] === undefined : false"
+               icon
+        >
+          <v-icon>remove_circle</v-icon>
+        </v-btn>
+      </template>
     </v-data-table>
 
     <BaseDialog
@@ -219,13 +257,30 @@
         <span>Remove</span>
       </template>
     </BaseDialog>
+
+    <BaseDialog
+      v-model="showDeleteInvitationDialog"
+      type="CONTINUE"
+      @close-dialog="
+        showDeleteInvitationDialog = false;
+      "
+      @continue-dialog="removeInvitations"
+    >
+      <template #title>Confirm Removal</template>
+      <template #text>
+        {{deleteConfirmationMsg}}
+      </template>
+      <template #button-text-continue>
+        <span>Remove</span>
+      </template>
+    </BaseDialog>
   </div>
 </template>
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
 import { mapFields } from 'vuex-map-fields';
-import { rbacService, roleService } from '@/services';
+import { rbacService, roleService, formService } from '@/services';
 import { IdentityMode, FormPermissions, FormRoleCodes } from '@/utils/constants';
 import AddTeamMember from '@/components/forms/manage/AddTeamMember.vue';
 export default {
@@ -262,8 +317,10 @@ export default {
       roleList: [],
       selectAllCheckBox:false,
       selectedItemToDelete:[],
+      selectedInvitations: [],
       search: '',
       showDeleteDialog: false,
+      showDeleteInvitationDialog: false,
       tableData: [],
       tableInvitationData: [],
       userId: '',
@@ -336,8 +393,7 @@ export default {
     },
     createInvitationHeaders() {
       const invitationHeaders = [
-        { text: '', value: 'form_checkbox', width: '80px', maxWidth: '85px', align: 'left' },
-        { text: 'Invitation Code', value: 'code', width: '100px' },
+        { text: 'Invitation Code', value: 'id', width: '100px' },
         { text: 'Identity Provider', value: 'identityProvider', width: '100px' }
       ];
       this.invitationHeaders = invitationHeaders
@@ -349,6 +405,7 @@ export default {
               text: role.display,
               value: role.code,
               description: role.description,
+              width: '30px',
             }))
             .sort((a, b) =>
               this.roleOrder.indexOf(a.value) > this.roleOrder.indexOf(b.value)
@@ -379,15 +436,19 @@ export default {
     createInvitationTableData() {
       this.tableInvitationData = this.formInvitations.map((formInvitation) => {
         const row = {
-          form_checkbox: true,
+          id: formInvitation.id,
           code: formInvitation.code,
           identityProvider: formInvitation.identityProvider,
         };
         this.roleList
           .map((role) => role.code)
-          .forEach((role) => (row[role] = this.formInvitations.some((fi) => fi.role === role)));
+          .forEach((role) => (row[role] = formInvitation.formInvitationRoles.some((fi) => fi.role === role)));
         return row;
       });
+
+      console.log(this.tableInvitationData);
+
+      this.edited = false;
     },
     selectAllUsersToDelete() {
       this.selectedItemToDelete.fill(this.selectAllCheckBox);
@@ -429,6 +490,8 @@ export default {
         }
       }
     },
+    removeInvitations() {
+    },
     isAllUsersSelected() {
       const allSelected = (currentValue) => currentValue ===true;
       return this.selectedItemToDelete.every(allSelected);
@@ -443,6 +506,14 @@ export default {
           formId: user.formId,
           role: role,
           userId: user.userId,
+        }));
+    },
+    generateFormInvitations(invitation) {
+      return Object.keys(invitation)
+        .filter((role) => this.roleOrder.includes(role) && invitation[role])
+        .map((role) => ({
+          invitationId: invitation.id,
+          role: role,
         }));
     },
     async getFormUsers() {
@@ -529,6 +600,10 @@ export default {
           this.showDeleteDialog = true;
         }
       }
+    },
+    onRemoveInvitationClick() {
+      this.deleteConfirmationMsg='Are you sure you wish to delete the selected invitation(s)?';
+      this.showDeleteInvitationDialog = true;
     },
     ownerError() {
       this.addNotification({
@@ -630,6 +705,29 @@ export default {
       }
       this.updating = false;
     },
+    /**
+     * @function setFormInvitations
+     * Sets roles for the form invitation
+     * @param {String} invitationId The invitationId to be updated
+     */
+    async setFormInvitations(invitationId) {
+      this.updating = true;
+      try {
+        const invitation = this.tableInvitationData.filter((i) => i.id === invitationId)[0];
+        const invitations = this.generateFormInvitations(invitation);
+        await formService.setFormInvitations(invitations, {
+          formId: this.formId,
+          invitationId: invitationId
+        });
+        this.getFormInvitations(this.formId);
+      } catch (error) {
+        this.addNotification({
+          message: 'An error occurred while attempting to update roles for the invitation.',
+          consoleError: `Error setting roles for form invitation ${this.invitationId}: ${error}`,
+        });
+      }
+      this.updating = false;
+    },
   },
   async mounted() {
     // TODO: Make sure vuex fetchForm has been called at least once before this
@@ -637,9 +735,9 @@ export default {
       this.fetchForm(this.formId),
       this.getFormPermissionsForUser(this.formId),
       this.getRolesList(),
-      this.getInvitationsList(this.formId)
     ]);
-    await this.getFormUsers(),
+    await this.getFormUsers();
+    await this.getInvitationsList(this.formId);
 
     this.loading = false;
   },

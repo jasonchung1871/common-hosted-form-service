@@ -259,4 +259,13 @@ module.exports = {
       next(error);
     }
   },
+
+  updateFormInvitations: async (req, res, next) => {
+    try {
+      const response = await service.updateFormInvitations(req.query.invitationId, req.params.formId, req.body, req.currentUser);
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  },
 };

@@ -10,7 +10,7 @@ class FormInvitation extends Timestamps(Model) {
 
   static get relationMappings() {
     const Form = require('./form');
-    const Role = require('./role');
+    const FormInvitationRole = require('./formInvitationRole');
     const IdentityProvider = require('./identityProvider');
 
     return {
@@ -22,12 +22,12 @@ class FormInvitation extends Timestamps(Model) {
           to: 'form.id'
         }
       },
-      userRole: {
-        relation: Model.HasOneRelation,
-        modelClass: Role,
+      formInvitationRoles: {
+        relation: Model.HasManyRelation,
+        modelClass: FormInvitationRole,
         join: {
-          from: 'form_invitation.role',
-          to: 'role.code'
+          from: 'form_invitation.id',
+          to: 'form_invitation_role.invitationId'
         }
       },
       identityProviders: {
@@ -62,12 +62,10 @@ class FormInvitation extends Timestamps(Model) {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['formVersionId', 'confirmationId', 'submission'],
+      required: ['formId', 'identityProvider'],
       properties: {
         id: { type: 'string', pattern: Regex.UUID },
-        code: { type: 'string', pattern: Regex.CONFIRMATION_ID },
         formId: { type: 'string', pattern: Regex.UUID },
-        role: { type: 'string', minLength: 1, maxLength: 255 },
         identityProvider: { type: 'string', maxLength: 255 },
         ...stamps
       },

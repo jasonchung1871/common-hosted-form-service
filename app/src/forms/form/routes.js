@@ -142,4 +142,8 @@ routes.get('/:formId/invitations', apiAccess, hasFormPermissions([P.TEAM_UPDATE]
   await controller.listFormInvitations(req, res, next);
 });
 
+routes.put('/:formId/invitations/:invitationId', apiAccess, hasFormPermissions([P.TEAM_UPDATE]), async (req, res, next) => {
+  await controller.updateFormInvitations(req, res, next);
+});
+
 module.exports = routes;

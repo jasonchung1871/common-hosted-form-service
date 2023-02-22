@@ -429,4 +429,15 @@ export default {
   listFormInvitations(formId) {
     return appAxios().get(`${ApiRoutes.FORMS}/${formId}/invitations`);
   },
+
+  /**
+   * @function setFormInvitations
+   * Set relationships between form invitations, roles, forms
+   * @param {Object} requestBody The request body for the relationships
+   * @param {Object} [params={}] The query parameters
+   * @returns {Promise} An axios response
+   */
+  setFormInvitations(requestBody, params = {}) {
+    return appAxios().put(`${ApiRoutes.FORMS}/${params.formId}/invitations/${params.invitationId}`, requestBody, { params });
+  },
 };
