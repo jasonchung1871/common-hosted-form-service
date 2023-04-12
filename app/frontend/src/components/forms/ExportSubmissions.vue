@@ -23,10 +23,11 @@
       content-class="export-submissions-dlg"
     >
       <v-card>
-        <v-card-title class="text-h5 pb-0 titleObjectStyle"
-          >Export Submissions to File</v-card-title
-        >
-        <v-card-text>
+        <v-card-title class="text-h5 pb-0 titleObjectStyle">Export Submissions to File</v-card-title>
+        <v-card-text v-if="processing">
+          <h1>{{ processingText }}</h1>
+        </v-card-text>
+        <v-card-text v-else>
           <hr
             style="
               height: 2px;
@@ -156,7 +157,7 @@
               </template>
             </v-radio>
           </v-radio-group>
-          <v-row class="mt-5" v-if="exportFormat === 'csv'">
+          <v-row class="mt-5">
             <v-col cols="6">
               <div class="subTitleObjectStyle">
                 Select the submission version
@@ -193,8 +194,7 @@
                   <template v-slot:label>
                     <span
                       class="radioboxLabelStyle"
-                      style="display: flex; align-content: flex-start"
-                      >Template 1
+                      style="display: flex; align-content: flex-start">Template 1
                       <div class="blueColorWrapper ml-1">
                         (Recommended)
                       </div></span
@@ -265,19 +265,22 @@ library.add(faXmark, faSquareArrowUpRight);
 export default {
   data() {
     return {
-      githubLink:
-        'https://github.com/bcgov/common-hosted-form-service/wiki/Submission-to-CSV-Export',
+      csvTemplates: 'flattenedWithBlankOut',
+      dataFields: false,
       dateRange: false,
       dialog: false,
       endDate: moment(Date()).format('YYYY-MM-DD'),
       endDateMenu: false,
-      dataFields: false,
       exportFormat: 'json',
+      exportData: [],
+      githubLink:
+        'https://github.com/bcgov/common-hosted-form-service/wiki/Submission-to-CSV-Export',
+      processing: false,
+      processingText: '',
       startDate: moment(Date()).format('YYYY-MM-DD'),
       startDateMenu: false,
-      versionSelected: 1,
-      csvTemplates: 'flattenedWithBlankOut',
       versions: [],
+      versionSelected: 1,
     };
   },
   computed: {
@@ -299,6 +302,8 @@ export default {
     },
     async callExport() {
       try {
+        this.exportData = [];
+        this.processing = true;
         // UTC start of selected start date...
         const from =
           this.dateRange && this.startDate
@@ -308,10 +313,45 @@ export default {
         const to =
           this.dateRange && this.endDate
             ? moment(`${this.endDate} 23:59:59`, 'YYYY-MM-DD hh:mm:ss')
-                .utc()
-                .format()
+              .utc()
+              .format()
             : undefined;
+        let submissions = [];
+        let exportData = [];
+        let TOTAL_SUBMISSIONS = 0;
+        const createdAt = (from !== undefined && to !== undefined) ? [from, to] : undefined;
+        if (this.versionSelected === 'All') {
+          // export all versions
+          for (let i = 0; i < this.form.versions.length; i++) {
+            const response = await formService.listSubmissions(this.form.id, {
+              formVersionId: this.form.versions[i].id,
+              createdAt,
+            });
+            TOTAL_SUBMISSIONS += parseInt(response.data.length);
+            this.processingText = `Prepping ${TOTAL_SUBMISSIONS} submissions.`;
+            submissions = submissions.concat(response.data);
+          }
+        } else {
+          const formVersionId = this.form.versions.filter((v) => v.version === this.versionSelected)[0].id;
+          const response = await formService.listSubmissions(this.form.id, {
+            formVersionId: formVersionId,
+            createdAt,
+          });
+          TOTAL_SUBMISSIONS += parseInt(response.data.length);
+          this.processingText = `Prepping ${TOTAL_SUBMISSIONS} submissions.`;
+          submissions = submissions.concat(response.data);
+        }
+        for (let i = 0; i < submissions.length; i++) {
+          const response = await formService.getSubmission(submissions[i].submissionId);
+          exportData = exportData.concat(response.data.submission);
+          this.processingText = `Downloaded ${exportData.length}/${TOTAL_SUBMISSIONS} submissions.`;
+        }
+        exportData.map((submission, idx) => {
+          this.processingText = `Generating your export.\nProcessing submission ${idx + 1}/${exportData.length}.`;
 
+          return submission;
+        });
+        /*
         const response = await formService.exportSubmissions(
           this.form.id,
           this.exportFormat,
@@ -325,30 +365,30 @@ export default {
           },
           this.dataFields ? this.userFormPreferences.preferences : undefined
         );
-
-        if (response && response.data) {
-          const blob = new Blob([response.data], {
-            type: response.headers['content-type'],
-          });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = this.fileName;
-          a.style.display = 'none';
-          a.classList.add('hiddenDownloadTextElement');
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          this.dialog = false;
-        } else {
-          throw new Error('No data in response from exportSubmissions call');
+        */
+        if (this.exportFormat === 'json') {
+          exportData = JSON.stringify(exportData);
         }
+        const blob = new Blob([exportData], {
+          type: this.exportFormat === 'json' ? 'application/json' : 'text/csv',
+        });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.fileName;
+        a.style.display = 'none';
+        a.classList.add('hiddenDownloadTextElement');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } catch (error) {
         this.addNotification({
           message:
             'An error occurred while attempting to export submissions for this form.',
           consoleError: `Error export submissions for ${this.form.id}: ${error}`,
         });
+      } finally {
+        this.processing = false;
       }
     },
     updateVersions() {

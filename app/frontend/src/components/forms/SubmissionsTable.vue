@@ -101,9 +101,9 @@
           >
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
-                <v-icon color="red" dark v-bind="attrs" v-on="on"
-                  >remove_circle</v-icon
-                >
+                <v-icon color="red" dark v-bind="attrs" v-on="on">
+                  remove_circle
+                </v-icon>
               </template>
               <span>Delete selected submissions</span>
             </v-tooltip>
@@ -120,9 +120,9 @@
           >
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
-                <v-icon color="green" dark v-bind="attrs" v-on="on"
-                  >restore_from_trash</v-icon
-                >
+                <v-icon color="green" dark v-bind="attrs" v-on="on">
+                  restore_from_trash
+                </v-icon>
               </template>
               <span>Restore selected submissions</span>
             </v-tooltip>
@@ -165,8 +165,8 @@
               <v-btn
                 @click="
                   (showDeleteDialog = true),
-                    (deleteItem = item),
-                    (singleSubmissionDelete = true)
+                  (deleteItem = item),
+                  (singleSubmissionDelete = true)
                 "
                 color="red"
                 icon
@@ -242,9 +242,9 @@
         @saving-filter-data="updateFilter"
         @cancel-filter-data="showColumnsDialog = false"
       >
-        <template #filter-title
-          >Search and select columns to show under your dashboard</template
-        >
+        <template #filter-title>
+          Search and select columns to show under your dashboard
+        </template>
       </BaseFilter>
     </v-dialog>
   </div>
@@ -499,25 +499,25 @@ export default {
               this.userFormPreferences.preferences &&
               this.userFormPreferences.preferences.filter
                 ? moment(
-                    this.userFormPreferences.preferences.filter[0],
-                    'YYYY-MM-DD hh:mm:ss'
-                  )
-                    .utc()
-                    .format()
+                  this.userFormPreferences.preferences.filter[0],
+                  'YYYY-MM-DD hh:mm:ss'
+                )
+                  .utc()
+                  .format()
                 : moment()
-                    .subtract(50, 'years')
-                    .utc()
-                    .format('YYYY-MM-DD hh:mm:ss'), //Get User filter Criteria (Min Date)
+                  .subtract(50, 'years')
+                  .utc()
+                  .format('YYYY-MM-DD hh:mm:ss'), //Get User filter Criteria (Min Date)
             maxDate:
               this.userFormPreferences &&
               this.userFormPreferences.preferences &&
               this.userFormPreferences.preferences.filter
                 ? moment(
-                    this.userFormPreferences.preferences.filter[1],
-                    'YYYY-MM-DD hh:mm:ss'
-                  )
-                    .utc()
-                    .format()
+                  this.userFormPreferences.preferences.filter[1],
+                  'YYYY-MM-DD hh:mm:ss'
+                )
+                  .utc()
+                  .format()
                 : moment().add(50, 'years').utc().format('YYYY-MM-DD hh:mm:ss'), //Get User filter Criteria (Max Date)
           }),
           deletedOnly: this.deletedOnly,
@@ -567,10 +567,12 @@ export default {
         this.getFormRolesForUser(this.formId),
         this.getFormPermissionsForUser(this.formId),
         this.fetchForm(this.formId).then(async () => {
-          await this.fetchFormFields({
-            formId: this.formId,
-            formVersionId: this.form.versions[0].id,
-          });
+          if (this.form.versions?.length > 0) {
+            await this.fetchFormFields({
+              formId: this.formId,
+              formVersionId: this.form.versions[0].id,
+            });
+          }
         }),
       ]).then(async () => {
         await this.populateSubmissionsTable();
