@@ -40,6 +40,20 @@ class UserSubmissions extends Model {
 
   static get modifiers() {
     return {
+      filterActive(query, value) {
+        if (value !== undefined) {
+          query.where('deleted', !value);
+        }
+      },
+      filterCreatedAt(query, minDate, maxDate) {
+        if (minDate && maxDate) {
+          query.whereBetween('createdAt', [minDate, maxDate]);
+        } else if (minDate) {
+          query.where('createdAt', '>=', minDate);
+        } else if (maxDate) {
+          query.where('createdAt', '<=', maxDate);
+        }
+      },
       filterFormId(query, value) {
         if (value) {
           query.where('formId', value);
@@ -53,11 +67,6 @@ class UserSubmissions extends Model {
       filterUserId(query, value) {
         if (value) {
           query.where('userId', value);
-        }
-      },
-      filterActive(query, value) {
-        if (value !== undefined) {
-          query.where('deleted', !value);
         }
       },
       orderDefault(builder) {

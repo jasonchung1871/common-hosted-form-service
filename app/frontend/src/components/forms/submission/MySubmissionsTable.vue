@@ -1,4 +1,6 @@
 <script>
+import _ from 'lodash';
+import moment from 'moment';
 import { mapActions, mapState } from 'pinia';
 import { useI18n } from 'vue-i18n';
 
@@ -24,6 +26,7 @@ export default {
   },
   data() {
     return {
+      debounceInput: null,
       filterData: [],
       filterIgnore: [
         {
@@ -33,11 +36,16 @@ export default {
           key: 'actions',
         },
       ],
+      firstDataLoad: true,
+      forceTableRefresh: 0,
       headers: [],
+      itemsPerPage: 10,
       loading: true,
+      page: 1,
       search: '',
       serverItems: [],
       showColumnsDialog: false,
+      sortBy: {},
       tableFilterIgnore: [],
     };
   },
@@ -48,6 +56,7 @@ export default {
       'submissionList',
       'isRTL',
       'totalSubmissions',
+      'userFormPreferences',
     ]),
 
     //------------------------ TABLE HEADERS
@@ -191,21 +200,34 @@ export default {
     isCopyFromExistingSubmissionEnabled() {
       return this.form && this.form.enableCopyExistingSubmission;
     },
+    userColumns() {
+      if (
+        this.userFormPreferences &&
+        this.userFormPreferences.preferences &&
+        this.userFormPreferences.preferences.columns
+      ) {
+        // Compare saved user prefs against the current form versions component names and remove any discrepancies
+        return this.userFormPreferences.preferences.columns.filter(
+          (x) => this.formFields.indexOf(x) !== -1
+        );
+      } else {
+        return [];
+      }
+    },
   },
   async mounted() {
-    await this.fetchForm(this.formId).then(async () => {
-      await this.fetchFormFields({
-        formId: this.formId,
-        formVersionId: this.form.versions[0].id,
-      });
-    });
-    await this.populateSubmissionsTable();
+    this.debounceInput = _.debounce(async () => {
+      this.forceTableRefresh += 1;
+    }, 300);
+    this.refreshSubmissions();
   },
   methods: {
     ...mapActions(useFormStore, [
       'fetchForm',
       'fetchFormFields',
       'fetchSubmissions',
+      'getFormPreferencesForCurrentUser',
+      'updateFormPreferencesForCurrentUser',
     ]),
     onShowColumnDialog() {
       this.BASE_FILTER_HEADERS.sort(
@@ -216,7 +238,28 @@ export default {
 
       this.showColumnsDialog = true;
     },
-
+    async updateTableOptions({ page, itemsPerPage, sortBy }) {
+      this.page = page;
+      if (sortBy?.length > 0) {
+        if (sortBy[0].key === 'date') {
+          this.sortBy.column = 'createdAt';
+        } else if (sortBy[0].key === 'submitter') {
+          this.sortBy.column = 'createdBy';
+        } else if (sortBy[0].key === 'status') {
+          this.sortBy.column = 'formSubmissionStatusCode';
+        } else {
+          this.sortBy.column = sortBy[0].key;
+        }
+        this.sortBy.order = sortBy[0].order;
+      } else {
+        this.sortBy = {};
+      }
+      this.itemsPerPage = itemsPerPage;
+      if (!this.firstDataLoad) {
+        await this.refreshSubmissions();
+      }
+      this.firstDataLoad = false;
+    },
     // Status columns in the table
     getCurrentStatus(record) {
       // Current status is most recent status (top in array, query returns in
@@ -242,13 +285,49 @@ export default {
       }
       return '';
     },
-    async populateSubmissionsTable() {
-      this.loading = true;
-      // Get the submissions for this form
-      await this.fetchSubmissions({
+    async getSubmissionData() {
+      let criteria = {
         formId: this.formId,
+        itemsPerPage: this.itemsPerPage,
+        page: this.page - 1,
+        paginationEnabled: true,
+        sortBy: this.sortBy,
+        search: this.search,
+        searchEnabled: this.search.length > 0 ? true : false,
+        createdAt: Object.values({
+          minDate:
+            this.userFormPreferences &&
+            this.userFormPreferences.preferences &&
+            this.userFormPreferences.preferences.filter
+              ? moment(
+                  this.userFormPreferences.preferences.filter[0],
+                  'YYYY-MM-DD hh:mm:ss'
+                )
+                  .utc()
+                  .format()
+              : moment()
+                  .subtract(50, 'years')
+                  .utc()
+                  .format('YYYY-MM-DD hh:mm:ss'), //Get User filter Criteria (Min Date)
+          maxDate:
+            this.userFormPreferences &&
+            this.userFormPreferences.preferences &&
+            this.userFormPreferences.preferences.filter
+              ? moment(
+                  this.userFormPreferences.preferences.filter[1],
+                  'YYYY-MM-DD hh:mm:ss'
+                )
+                  .utc()
+                  .format()
+              : moment().add(50, 'years').utc().format('YYYY-MM-DD hh:mm:ss'), //Get User filter Criteria (Max Date)
+        }),
+        createdBy: this.currentUserOnly
+          ? `${this.user.username}@${this.user.idp?.code}`
+          : '',
         userView: true,
-      });
+      };
+      // Get the submissions for this form
+      await this.fetchSubmissions(criteria);
       // Build up the list of forms for the table
       if (this.submissionList) {
         const tableRows = this.submissionList.map((s) => {
@@ -267,35 +346,83 @@ export default {
                 ? s.submissionStatus[0].createdBy
                 : '',
           };
-          s?.submission?.submission?.data &&
-            Object.keys(s.submission.submission.data).forEach((col) => {
-              let colData = s.submission.submission.data[col];
-              if (
-                !(typeof colData === 'string' || typeof colData === 'number')
-              ) {
-                // The data isn't a string or number, so we should turn it into a string
-                colData = JSON.stringify(colData);
+          // Add any custom columns
+          this.userColumns.forEach((col) => {
+            let colData = s[col];
+            if (!(typeof colData === 'string' || typeof colData === 'number')) {
+              // The data isn't a string or number, so we should turn it into a string
+              colData = JSON.stringify(colData);
+            }
+            if (Object.keys(fields).includes(col)) {
+              let suffixNum = 1;
+              while (Object.keys(fields).includes(col + '_' + suffixNum)) {
+                suffixNum++;
               }
-              if (Object.keys(fields).includes(col)) {
-                let suffixNum = 1;
-                while (Object.keys(fields).includes(col + '_' + suffixNum)) {
-                  suffixNum++;
-                }
-                fields[`${col}_${suffixNum}`] = colData;
-              } else {
-                fields[col] = colData;
-              }
-            });
+              fields[`${col}_${suffixNum}`] = colData;
+            } else {
+              fields[col] = colData;
+            }
+          });
           return fields;
         });
         this.serverItems = tableRows;
       }
-      this.loading = false;
     },
-
+    async populateSubmissionsTable() {
+      try {
+        this.loading = true;
+        // Get user prefs for this form
+        await this.getFormPreferencesForCurrentUser(this.formId);
+        // Get the submissions for this form
+        await this.getSubmissionData();
+      } catch (error) {
+        // Handled in state fetchSubmissions
+      } finally {
+        this.loading = false;
+      }
+    },
+    async refreshSubmissions() {
+      this.loading = true;
+      Promise.all([
+        this.fetchForm(this.formId).then(async () => {
+          if (this.form.versions?.length > 0) {
+            await this.fetchFormFields({
+              formId: this.formId,
+              formVersionId: this.form.versions[0].id,
+            });
+          }
+        }),
+      ])
+        .then(async () => {
+          await this.populateSubmissionsTable();
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    },
     async updateFilter(data) {
-      this.filterData = data;
       this.showColumnsDialog = false;
+      this.filterData = data;
+      let preferences = {
+        columns: [],
+      };
+      data.forEach((d) => {
+        preferences.columns.push(d);
+      });
+
+      await this.updateFormPreferencesForCurrentUser({
+        formId: this.form.id,
+        preferences: preferences,
+      });
+      await this.populateSubmissionsTable();
+    },
+    async handleSearch(value) {
+      this.search = value;
+      if (value === '') {
+        await this.refreshSubmissions();
+      } else {
+        this.debounceInput();
+      }
     },
   },
 };
@@ -380,13 +507,15 @@ export default {
     </div>
 
     <!-- table header -->
-    <v-data-table
-      class="submissions-table"
+    <v-data-table-server
+      :key="forceTableRefresh"
       hover
+      :items-length="totalSubmissions"
+      class="submissions-table"
+      :items-per-page="itemsPerPage"
       :headers="HEADERS"
       item-value="title"
       :items="serverItems"
-      :search="search"
       :loading="loading"
       :loading-text="$t('trans.mySubmissionsTable.loadingText')"
       :no-data-text="
@@ -395,6 +524,7 @@ export default {
           : $t('trans.mySubmissionsTable.noDataText')
       "
       :lang="locale"
+      @update:options="updateTableOptions"
     >
       <template #item.lastEdited="{ item }">
         {{ $filters.formatDateLong(item.lastEdited) }}
@@ -415,7 +545,7 @@ export default {
           @draft-deleted="populateSubmissionsTable"
         />
       </template>
-    </v-data-table>
+    </v-data-table-server>
     <v-dialog v-model="showColumnsDialog" width="700">
       <BaseFilter
         :input-filter-placeholder="

@@ -1,8 +1,10 @@
 const Problem = require('api-problem');
+const { ref } = require('objection');
+const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 const { FormRoleUser, FormSubmissionUser, User, UserFormAccess, UserSubmissions } = require('../common/models');
 const { Roles } = require('../common/constants');
-const { queryUtils } = require('../common/utils');
+const { queryUtils, typeUtils } = require('../common/utils');
 const authService = require('../auth/service');
 const idpService = require('../../components/idpService');
 
@@ -89,7 +91,7 @@ const service = {
 
   getCurrentUserSubmissions: async (currentUser, params) => {
     params = queryUtils.defaultActiveOnly(params);
-    return UserSubmissions.query()
+    const query = UserSubmissions.query()
       .withGraphFetched('submissionStatus(orderDescending)')
       .withGraphFetched('submission')
       .modify('filterFormId', params.formId)
@@ -97,6 +99,91 @@ const service = {
       .modify('filterUserId', currentUser.id)
       .modify('filterActive', params.active)
       .modify('orderDefault');
+
+    if (params.createdAt && Array.isArray(params.createdAt) && params.createdAt.length === 2) {
+      query.modify('filterCreatedAt', params.createdAt[0], params.createdAt[1]);
+    }
+
+    const selection = ['confirmationId', 'createdAt', 'formId', 'formSubmissionId'];
+
+    let fields = [];
+    if (params.fields && params.fields.length) {
+      if (typeof params.fields !== 'string' && params.fields.includes('updatedAt')) {
+        selection.push('updatedAt');
+      }
+      if (Array.isArray(params.fields)) {
+        fields = params.fields.flatMap((f) => f.split(',').map((s) => s.trim()));
+      } else {
+        fields = params.fields.split(',').map((s) => s.trim());
+      }
+
+      // Remove updatedAt and updatedBy so they won't be pulled from submission
+      // columns. Also remove empty values to handle the case of trailing commas
+      // and other malformed data too.
+      fields = fields.filter((f) => f !== 'updatedAt' && f.trim() !== '');
+    }
+
+    if (params.sortBy?.column && !selection.includes(params.sortBy.column) && !fields.includes(params.sortBy.column)) {
+      throw new Problem(400, {
+        details: `orderBy column '${params.sortBy.column}' not in selected columns`,
+      });
+    }
+
+    if (params.paginationEnabled) {
+      return await service.processPaginationData(query, parseInt(params.page), parseInt(params.itemsPerPage), params.totalSubmissions, params.search, params.searchEnabled);
+    }
+
+    return query;
+  },
+
+  async processPaginationData(query, page, itemsPerPage, totalSubmissions, search, searchEnabled) {
+    let isSearchAble = typeUtils.isBoolean(searchEnabled) ? searchEnabled : searchEnabled !== undefined ? JSON.parse(searchEnabled) : false;
+    if (isSearchAble) {
+      let submissionsData = await query;
+      let result = {
+        results: [],
+        total: 0,
+      };
+      let searchedData = submissionsData.filter((data) => {
+        return Object.keys(data).some((key) => {
+          if (key !== 'submissionId' && key !== 'formVersionId' && key !== 'formId') {
+            if (!Array.isArray(data[key]) && !typeUtils.isObject(data[key])) {
+              if (
+                !typeUtils.isBoolean(data[key]) &&
+                !typeUtils.isNil(data[key]) &&
+                typeUtils.isDate(data[key]) &&
+                moment(new Date(data[key])).format('YYYY-MM-DD hh:mm:ss a').toString().includes(search)
+              ) {
+                result.total = result.total + 1;
+                return true;
+              }
+              if (typeUtils.isString(data[key]) && data[key].toLowerCase().includes(search.toLowerCase())) {
+                result.total = result.total + 1;
+                return true;
+              } else if (
+                (typeUtils.isNil(data[key]) || typeUtils.isBoolean(data[key]) || (typeUtils.isNumeric(data[key]) && typeUtils.isNumeric(search))) &&
+                parseFloat(data[key]) === parseFloat(search)
+              ) {
+                result.total = result.total + 1;
+                return true;
+              }
+            }
+            return false;
+          }
+          return false;
+        });
+      });
+      let start = page * itemsPerPage;
+      let end = page * itemsPerPage + itemsPerPage;
+      result.results = searchedData.slice(start, end);
+      return result;
+    } else {
+      if (itemsPerPage && parseInt(itemsPerPage) === -1) {
+        return await query.page(parseInt(page), parseInt(totalSubmissions || 0));
+      } else if (itemsPerPage && parseInt(page) >= 0) {
+        return await query.page(parseInt(page), parseInt(itemsPerPage));
+      }
+    }
   },
 
   getFormUsers: async (params) => {

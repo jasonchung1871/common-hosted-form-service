@@ -126,19 +126,6 @@ export default {
         return [];
       }
     },
-    userFilter() {
-      if (
-        this.userFormPreferences &&
-        this.userFormPreferences.preferences &&
-        this.userFormPreferences.preferences.filter &&
-        this.userFormPreferences.preferences.filter.length
-      ) {
-        // Compare saved user prefs against the current form versions component names and remove any discrepancies
-        return this.userFormPreferences.preferences.filter;
-      } else {
-        return [];
-      }
-    },
 
     //------------------------ TABLE HEADERS
     // These are headers that will be available by default for the

@@ -649,6 +649,15 @@ export const useFormStore = defineStore('form', {
         const response = userView
           ? await rbacService.getUserSubmissions({
               formId: formId,
+              fields: fields,
+              createdAt: createdAt,
+              page: page,
+              paginationEnabled: paginationEnabled,
+              itemsPerPage: itemsPerPage,
+              totalSubmissions: this.totalSubmissions,
+              sortBy: sortBy,
+              search: search,
+              searchEnabled: searchEnabled,
             })
           : await formService.listSubmissions(formId, {
               deleted: deletedOnly,
