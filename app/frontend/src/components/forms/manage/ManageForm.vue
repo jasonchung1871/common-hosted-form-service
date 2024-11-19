@@ -305,7 +305,7 @@ defineExpose({
           </div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <ExternalAPIs />
+          <ExternalAPIs :form-id="form.id" />
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>

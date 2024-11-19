@@ -1,222 +1,227 @@
-<script>
-import { mapState, mapWritableState, mapActions } from 'pinia';
-import { useFormStore } from '~/store/form';
+<script setup>
+import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import BaseDialog from '~/components/base/BaseDialog.vue';
 import { formService } from '~/services';
-import { i18n } from '~/internationalization';
+import { useFormStore } from '~/store/form';
 import { useNotificationStore } from '~/store/notification';
 import { NotificationTypes } from '~/utils/constants';
-import BaseDialog from '~/components/base/BaseDialog.vue';
-import { ref } from 'vue';
 
-export default {
-  components: {
-    BaseDialog,
-  },
-  data() {
-    return {
-      loading: false,
-      headers: [
-        { title: 'Name', key: 'name' },
-        { title: 'URL', key: 'endpointUrl' },
-        { title: 'Status', key: 'code' },
-        { title: 'Actions', key: 'actions', align: 'end' },
-      ],
-      externalAPIAlgorithmList: [],
-      externalAPIStatusCodes: [],
-      items: [],
-      techdocsLink:
-        'https://developer.gov.bc.ca/docs/default/component/chefs-techdocs/Capabilities/Integrations/Calling-External-API/',
-      editDialog: {
-        title: '',
-        item: {
-          id: null,
-          formId: null,
-          name: null,
-          endpointUrl: null,
-          code: null,
-          sendApiKey: false,
-          apiKeyHeader: null,
-          apiKey: null,
-          sendUserToken: false,
-          userTokenHeader: null,
-          userTokenBearer: false,
-          sendUserInfo: false,
-        },
-        show: false,
-      },
-      nameRules: ref([
-        (v) => !!v || i18n.t('trans.externalAPI.formNameReq'),
-        (v) =>
-          (v && v.length <= 255) ||
-          i18n.t('trans.externalAPI.formNameMaxChars'),
-      ]),
-      endpointUrlRules: [
-        (v) => !!v || this.$t('trans.externalAPI.validEndpointRequired'),
-        (v) =>
-          (v &&
-            new RegExp(
-              /^(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?$/gim
-            ).test(v)) ||
-          this.$t('trans.externalAPI.validEndpointRequired'),
-      ],
-      apiKeyHeaderRules: ref([
-        (v) => {
-          if (this.editDialog.item.sendApiKey) {
-            return !!v || this.$t('trans.externalAPI.apiKeyFieldRequired');
-          }
-          return true;
-        },
-      ]),
-      userTokenHeaderRules: ref([
-        (v) => {
-          if (this.editDialog.item.sendUserToken) {
-            return !!v || this.$t('trans.externalAPI.userTokenFieldRequired');
-          }
-          return true;
-        },
-      ]),
-    };
-  },
-  computed: {
-    ...mapState(useFormStore, ['isRTL', 'lang']),
-    ...mapWritableState(useFormStore, ['form']),
-  },
-  async mounted() {
-    await this.getExternalAPIStatusCodes();
-    await this.fetchExternalAPIs();
-  },
-  methods: {
-    ...mapActions(useNotificationStore, ['addNotification']),
-    async fetchExternalAPIs() {
-      this.loading = true;
-      try {
-        const result = await formService.externalAPIList(this.form.id);
-        // Clear existing items before adding new ones
-        this.items = [];
-        this.resetEditDialog();
+const { t } = useI18n({ useScope: 'global' });
 
-        // Iterate through each item in the result
-        result.data.forEach((rec) => {
-          this.items.push(rec);
-        });
-      } catch (e) {
-        this.addNotification({
-          text: i18n.t('trans.externalAPI.fetchListError'),
-          consoleError: i18n.t('trans.externalAPI.fetchListError', {
-            error: e.message,
-          }),
-        });
-      } finally {
-        this.loading = false;
-      }
+const properties = defineProps({
+  formId: {
+    type: String,
+    default: () => '',
+  },
+});
+
+const loading = ref(false);
+const headers = ref([
+  { title: 'Name', key: 'name' },
+  { title: 'URL', key: 'endpointUrl' },
+  { title: 'Status', key: 'code' },
+  { title: 'Actions', key: 'actions', align: 'end' },
+]);
+const externalAPIStatusCodes = ref([]);
+const items = ref([]);
+const techdocsLink = ref(
+  'https://developer.gov.bc.ca/docs/default/component/chefs-techdocs/Capabilities/Integrations/Calling-External-API/'
+);
+const editDialog = ref({
+  title: '',
+  item: {
+    id: null,
+    formId: null,
+    name: null,
+    endpointUrl: null,
+    code: null,
+    sendApiKey: false,
+    apiKeyHeader: null,
+    apiKey: null,
+    sendUserToken: false,
+    userTokenHeader: null,
+    userTokenBearer: false,
+    sendUserInfo: false,
+  },
+  show: false,
+});
+const nameRules = ref([
+  (v) => !!v || t('trans.externalAPI.formNameReq'),
+  (v) => (v && v.length <= 255) || t('trans.externalAPI.formNameMaxChars'),
+]);
+const endpointUrlRules = ref([
+  (v) => !!v || t('trans.externalAPI.validEndpointRequired'),
+  (v) =>
+    (v &&
+      new RegExp(
+        /^(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?$/gim
+      ).test(v)) ||
+    t('trans.externalAPI.validEndpointRequired'),
+]);
+const apiKeyHeaderRules = ref([
+  (v) => {
+    if (editDialog.value.item.sendApiKey) {
+      return !!v || t('trans.externalAPI.apiKeyFieldRequired');
+    }
+    return true;
+  },
+]);
+const userTokenHeaderRules = ref([
+  (v) => {
+    if (editDialog.value.item.sendUserToken) {
+      return !!v || t('trans.externalAPI.userTokenFieldRequired');
+    }
+    return true;
+  },
+]);
+
+const formStore = useFormStore();
+const notificationStore = useNotificationStore();
+
+const { isRTL, lang } = storeToRefs(formStore);
+
+onMounted(async () => {
+  await getExternalAPIStatusCodes();
+  await fetchExternalAPIs();
+});
+
+async function fetchExternalAPIs() {
+  loading.value = true;
+  try {
+    const result = await formService.externalAPIList(properties.formId);
+    // Clear existing items before adding new ones
+    items.value = [];
+    resetEditDialog();
+
+    // Iterate through each item in the result
+    result.data.forEach((rec) => {
+      items.value.push(rec);
+    });
+  } catch (e) {
+    notificationStore.addNotification({
+      text: t('trans.externalAPI.fetchListError'),
+      consoleError: t('trans.externalAPI.fetchListError', {
+        error: e.message,
+      }),
+    });
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function getExternalAPIStatusCodes() {
+  try {
+    const result = await formService.externalAPIStatusCodes(properties.formId);
+    externalAPIStatusCodes.value = result.data;
+  } catch (e) {
+    notificationStore.addNotification({
+      text: t('trans.externalAPI.fetchStatusListError'),
+      consoleError: t('trans.externalAPI.fetchStatusListError', {
+        error: e.message,
+      }),
+    });
+  }
+}
+
+function resetEditDialog() {
+  editDialog.value = {
+    title: '',
+    item: {
+      id: null,
+      formId: properties.formId,
+      name: null,
+      endpointUrl: null,
+      code: null,
+      sendApiKey: false,
+      apiKeyHeader: null,
+      apiKey: null,
+      allowSendUserToken: false,
+      sendUserToken: false,
+      userTokenHeader: null,
+      userTokenBearer: false,
+      sendUserInfo: false,
     },
-    async getExternalAPIStatusCodes() {
-      try {
-        const result = await formService.externalAPIStatusCodes(this.form.id);
-        this.externalAPIStatusCodes = result.data;
-      } catch (e) {
-        this.addNotification({
-          text: i18n.t('trans.externalAPI.fetchStatusListError'),
-          consoleError: i18n.t('trans.externalAPI.fetchStatusListError', {
-            error: e.message,
-          }),
-        });
-      }
-    },
-    resetEditDialog() {
-      this.editDialog = {
-        title: '',
-        item: {
-          id: null,
-          formId: this.form.id,
-          name: null,
-          endpointUrl: null,
-          code: null,
-          sendApiKey: false,
-          apiKeyHeader: null,
-          apiKey: null,
-          allowSendUserToken: false,
-          sendUserToken: false,
-          userTokenHeader: null,
-          userTokenBearer: false,
-          sendUserInfo: false,
-        },
-        show: false,
-      };
-    },
-    async handleDelete(item) {
-      try {
-        await formService.externalAPIDelete(this.form.id, item.id);
-        this.addNotification({
-          text: i18n.t('trans.externalAPI.deleteSuccess'),
+    show: false,
+  };
+}
+
+async function handleDelete(item) {
+  try {
+    await formService.externalAPIDelete(properties.formId, item.id);
+    notificationStore.addNotification({
+      text: t('trans.externalAPI.deleteSuccess'),
+      ...NotificationTypes.SUCCESS,
+    });
+  } catch (e) {
+    notificationStore.addNotification({
+      text: t('trans.externalAPI.deleteError'),
+      consoleError: t('trans.externalAPI.deleteError', {
+        error: e.message,
+      }),
+    });
+  } finally {
+    fetchExternalAPIs();
+  }
+}
+
+function handleEdit(item) {
+  resetEditDialog();
+  editDialog.value.item = item;
+  editDialog.value.title = t('trans.externalAPI.editTitle');
+  editDialog.value.show = true;
+}
+
+function handleNew() {
+  resetEditDialog();
+  editDialog.value.title = t('trans.externalAPI.createTitle');
+  editDialog.value.show = true;
+}
+
+async function saveItem() {
+  const { valid } = await this.$refs.form.validate();
+  if (valid) {
+    const isEdit = editDialog.value.item.id;
+    try {
+      if (isEdit) {
+        await formService.externalAPIUpdate(
+          properties.formId,
+          editDialog.value.item.id,
+          editDialog.value.item
+        );
+        notificationStore.addNotification({
+          text: t('trans.externalAPI.editSuccess'),
           ...NotificationTypes.SUCCESS,
         });
-      } catch (e) {
-        this.addNotification({
-          text: i18n.t('trans.externalAPI.deleteError'),
-          consoleError: i18n.t('trans.externalAPI.deleteError', {
-            error: e.message,
-          }),
+      } else {
+        await formService.externalAPICreate(
+          properties.formId,
+          editDialog.value.item
+        );
+        notificationStore.addNotification({
+          text: t('trans.externalAPI.createSuccess'),
+          ...NotificationTypes.SUCCESS,
         });
-      } finally {
-        this.fetchExternalAPIs();
       }
-    },
-    handleEdit(item) {
-      this.resetEditDialog();
-      this.editDialog.item = item;
-      this.editDialog.title = i18n.t('trans.externalAPI.editTitle');
-      this.editDialog.show = true;
-    },
-    handleNew() {
-      this.resetEditDialog();
-      this.editDialog.title = i18n.t('trans.externalAPI.createTitle');
-      this.editDialog.show = true;
-    },
-    async saveItem() {
-      const { valid } = await this.$refs.form.validate();
-      if (valid) {
-        const isEdit = this.editDialog.item.id;
-        try {
-          if (isEdit) {
-            await formService.externalAPIUpdate(
-              this.form.id,
-              this.editDialog.item.id,
-              this.editDialog.item
-            );
-            this.addNotification({
-              text: i18n.t('trans.externalAPI.editSuccess'),
-              ...NotificationTypes.SUCCESS,
-            });
-          } else {
-            await formService.externalAPICreate(
-              this.form.id,
-              this.editDialog.item
-            );
-            this.addNotification({
-              text: i18n.t('trans.externalAPI.createSuccess'),
-              ...NotificationTypes.SUCCESS,
-            });
-          }
-          // reset and close on success...
-          this.resetEditDialog();
-        } catch (e) {
-          const msg = isEdit
-            ? 'trans.externalAPI.editError'
-            : 'trans.externalAPI.createError';
-          this.addNotification({
-            text: i18n.t(msg),
-            consoleError: i18n.t(msg, {
-              error: e.message,
-            }),
-          });
-        } finally {
-          await this.fetchExternalAPIs();
-        }
-      }
-    },
-  },
-};
+      // reset and close on success...
+      resetEditDialog();
+    } catch (e) {
+      const msg = isEdit
+        ? 'trans.externalAPI.editError'
+        : 'trans.externalAPI.createError';
+      notificationStore.addNotification({
+        text: t(msg),
+        consoleError: t(msg, {
+          error: e.message,
+        }),
+      });
+    } finally {
+      await fetchExternalAPIs();
+    }
+  }
+}
 </script>
 
 <template>
