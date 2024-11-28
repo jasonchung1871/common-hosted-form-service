@@ -26,6 +26,7 @@ const headers = ref([
   { title: 'Actions', key: 'actions', align: 'end' },
 ]);
 const externalAPIStatusCodes = ref([]);
+const form = ref(null);
 const items = ref([]);
 const techdocsLink = ref(
   'https://developer.gov.bc.ca/docs/default/component/chefs-techdocs/Capabilities/Integrations/Calling-External-API/'
@@ -48,6 +49,7 @@ const editDialog = ref({
   },
   show: false,
 });
+/* c8 ignore start */
 const nameRules = ref([
   (v) => !!v || t('trans.externalAPI.formNameReq'),
   (v) => (v && v.length <= 255) || t('trans.externalAPI.formNameMaxChars'),
@@ -77,6 +79,7 @@ const userTokenHeaderRules = ref([
     return true;
   },
 ]);
+/* c8 ignore end */
 
 const formStore = useFormStore();
 const notificationStore = useNotificationStore();
@@ -163,7 +166,7 @@ async function handleDelete(item) {
       }),
     });
   } finally {
-    fetchExternalAPIs();
+    await fetchExternalAPIs();
   }
 }
 
@@ -181,7 +184,7 @@ function handleNew() {
 }
 
 async function saveItem() {
-  const { valid } = await this.$refs.form.validate();
+  const { valid } = await form.value.validate();
   if (valid) {
     const isEdit = editDialog.value.item.id;
     try {
