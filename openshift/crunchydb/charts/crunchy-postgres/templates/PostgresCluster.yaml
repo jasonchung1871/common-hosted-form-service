@@ -121,9 +121,9 @@ spec:
           {{ if $repo.s3.uriStyle }}
             {{ $repo.name }}-s3-uri-style: {{ $repo.s3.uriStyle }}
           {{ end }}
-        {{ end }}
-        {{ if $repo.path }}
-        {{ $repo.name }}-path: {{ $repo.path }}
+          {{ if $repo.path }}
+            {{ $repo.name }}-path: {{ $repo.path }}
+          {{ end }}
         {{ end }}
         {{ range $schedule := $repo.schedules }}
         {{ if eq $schedule.type "full" }}
