@@ -54,7 +54,6 @@ pgBackRestConfig:
   # If retention-full-type set to 'time' then the number defined in retention will take that many days worth of full backups before expiration
   retentionFullType: count
   repos:
-  repos:
     - name: repo1
       path: "/backups/redash"
       volume:
