@@ -6,6 +6,9 @@ postgresVersion: 16
 #postGISVersion: '3.3' # use this version of POSTGIS. both crunchyImage and this property needs to have valid values for POSTGIS to be enabled.
 imagePullPolicy: IfNotPresent
 
+global:
+  timezone: "America/Vancouver"
+
 # enable to bootstrap a standby cluster from backup. Then disable to promote this standby to primary
 standby:
   enabled: false
@@ -65,7 +68,7 @@ pgBackRestConfig:
           retentionPolicy: count
         - name: diff-daily
           type: differential
-          schedule: '0 0 * * *'
+          schedule: '0 2 * * *'
           retentionLimit: "6"
         - name: incremental
           type: incremental
@@ -94,6 +97,7 @@ patroni:
       min_wal_size: 32MB
       max_wal_size: 64MB # default is 1GB
       max_slot_wal_keep_size: 128MB # default is -1, allowing unlimited wal growth when replicas fall behind
+      timezone: 'America/Vancouver'
 
 proxy:
   pgBouncer:

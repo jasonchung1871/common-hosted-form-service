@@ -75,7 +75,7 @@ pgBackRestConfig:
           retentionPolicy: count
         - name: diff-daily
           type: differential
-          schedule: '0 0 * * *'
+          schedule: '0 2 * * *'
           retentionLimit: "6"
         - name: incremental
           type: incremental
@@ -109,6 +109,7 @@ patroni:
       min_wal_size: 32MB
       max_wal_size: 64MB # default is 1GB
       max_slot_wal_keep_size: 128MB # default is -1, allowing unlimited wal growth when replicas fall behind
+      timezone: 'America/Vancouver'
 
 proxy:
   pgBouncer:

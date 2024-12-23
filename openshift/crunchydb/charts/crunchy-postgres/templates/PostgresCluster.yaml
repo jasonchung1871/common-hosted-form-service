@@ -206,6 +206,7 @@ spec:
           min_wal_size: {{ .Values.patroni.postgresql.parameters.min_wal_size }}
           max_wal_size: {{ .Values.patroni.postgresql.parameters.max_wal_size }}
           max_slot_wal_keep_size:  {{ .Values.patroni.postgresql.parameters.max_slot_wal_keep_size }}
+          timezone: {{ .Values.patroni.postgresql.parameters.timezone}}
   
   proxy:
     pgBouncer:
