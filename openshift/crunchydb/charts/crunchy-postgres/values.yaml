@@ -69,16 +69,17 @@ pgBackRestConfig:
       schedules:
         - name: full-weekly
           type: full
-          schedule: '0 0 * * 0'
+          schedule: '0 8 * * 0' # Every sunday at midnight
           retentionLimit: "12"
           retentionPolicy: count
         - name: diff-daily
           type: differential
-          schedule: '0 2 * * *'
+          schedule: '0 8 * * 1-6' # Every day except sunday at midnight
           retentionLimit: "6"
         - name: incremental
           type: incremental
-          schedule: '0 0,4,8,12,16,20 * * *'
+          schedule: '0 0,4,12,16,20 * * *' # Every 4 hours, except midnight to prevent a lock conflict
+          retentionLimit: "90"
   repoHost:
     requests:
       cpu: 1m

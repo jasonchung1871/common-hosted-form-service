@@ -133,6 +133,9 @@ spec:
         {{ if eq $schedule.type "differential" }}
         {{ $repo.name }}-retention-diff: {{ $schedule.retentionLimit | quote }}
         {{ end }}
+        {{ if eq $schedule.type "incremental" }}
+        {{ $repo.name }}-retention-archive: {{ $schedule.retentionLimit | quote }}
+        {{ end}}
         {{ end }}
       {{ end }}
       repos:
