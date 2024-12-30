@@ -50,7 +50,7 @@ dataSource:
       region: "ca-central-1"
     stanza: db
 
-pgBackRestConfig:
+pgBackRest:
   image: # it's not necessary to specify an image as the images specified in the Crunchy Postgres Operator will be pulled by default
   repos:
     - name: repo1

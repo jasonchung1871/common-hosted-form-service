@@ -100,17 +100,17 @@ spec:
   
   backups:
     pgbackrest:
-      {{ if .Values.pgBackRestConfig.image }}
-      image: {{ .Values.pgBackRestConfig.image | quote }}
+      {{ if .Values.pgBackRest.image }}
+      image: {{ .Values.pgBackRest.image | quote }}
       {{ end }}
-      {{ if eq $.Values.pgBackRestConfig.s3.enabled true }}
+      {{ if eq $.Values.pgBackRest.s3.enabled true }}
       configuration:
       - secret:
-          name: {{ .Values.pgBackRestConfig.s3.s3Secret | quote }}
+          name: {{ .Values.pgBackRest.s3.s3Secret | quote }}
       {{ end }}
       global:
-      {{ range $repo := .Values.pgBackRestConfig.repos }}
-        {{ if eq $.Values.pgBackRestConfig.s3.enabled true }}
+      {{ range $repo := .Values.pgBackRest.repos }}
+        {{ if eq $.Values.pgBackRest.s3.enabled true }}
           {{ $repo.name }}-s3-bucket: {{ $repo.s3.bucket }}
           {{ $repo.name }}-s3-endpoint: {{ $repo.s3.endpoint }}
           {{ $repo.name }}-s3-key: {{ $repo.s3.key }}
@@ -139,7 +139,7 @@ spec:
         {{ end }}
       {{ end }}
       repos:
-        {{ range $repo := .Values.pgBackRestConfig.repos }}
+        {{ range $repo := .Values.pgBackRest.repos }}
         - name: {{ $repo.name }}
           {{ if $repo.volume }}
           volume:
@@ -171,29 +171,29 @@ spec:
       repoHost:
         resources:
           requests:
-            cpu: {{ .Values.pgBackRestConfig.repoHost.requests.cpu }}
-            memory: {{ .Values.pgBackRestConfig.repoHost.requests.memory }}
+            cpu: {{ .Values.pgBackRest.repoHost.requests.cpu }}
+            memory: {{ .Values.pgBackRest.repoHost.requests.memory }}
           limits:
-            cpu: {{ .Values.pgBackRestConfig.repoHost.limits.cpu }}
-            memory: {{ .Values.pgBackRestConfig.repoHost.limits.memory }}
+            cpu: {{ .Values.pgBackRest.repoHost.limits.cpu }}
+            memory: {{ .Values.pgBackRest.repoHost.limits.memory }}
       sidecars:
         # this stuff is for the "pgbackrest" container in the "postgres-crunchy-ha" set of pods
         pgbackrest:
           resources:
             requests:
-              cpu: {{ .Values.pgBackRestConfig.sidecars.requests.cpu }}
-              memory: {{ .Values.pgBackRestConfig.sidecars.requests.memory }}
+              cpu: {{ .Values.pgBackRest.sidecars.requests.cpu }}
+              memory: {{ .Values.pgBackRest.sidecars.requests.memory }}
             limits:
-              cpu: {{ .Values.pgBackRestConfig.sidecars.limits.cpu }}
-              memory: {{ .Values.pgBackRestConfig.sidecars.limits.memory }}
-        pgbackrestConfig:
+              cpu: {{ .Values.pgBackRest.sidecars.limits.cpu }}
+              memory: {{ .Values.pgBackRest.sidecars.limits.memory }}
+        pgBackRest:
           resources:
             requests:
-              cpu: {{ .Values.pgBackRestConfig.sidecars.requests.cpu }}
-              memory: {{ .Values.pgBackRestConfig.sidecars.requests.memory }}
+              cpu: {{ .Values.pgBackRest.sidecars.requests.cpu }}
+              memory: {{ .Values.pgBackRest.sidecars.requests.memory }}
             limits:
-              cpu: {{ .Values.pgBackRestConfig.sidecars.limits.cpu }}
-              memory: {{ .Values.pgBackRestConfig.sidecars.limits.memory }}
+              cpu: {{ .Values.pgBackRest.sidecars.limits.cpu }}
+              memory: {{ .Values.pgBackRest.sidecars.limits.memory }}
   standby:
     enabled: {{ .Values.standby.enabled }}
     repoName: {{ .Values.standby.repoName }}

@@ -44,7 +44,7 @@ A chart to provision a [Crunchy Postgres](https://www.crunchydata.com/) cluster.
 | `pgBackRest.retentionFullType`                       | Either 'count' or 'time'                                      | `count`                |
 | `pgBackRest.repos.schedules.full`                    | Full backup schedule                                          | `0 8 * * *`            |
 | `pgBackRest.repos.schedules.incremental`             | Incremental backup schedule                                   | `0 0,4,12,16,20 * * *` |
-| `pgBackRest.repos.schedules.volume.addessModes`      | Access modes                                                  | `ReadWriteOnce`        |
+| `pgBackRest.repos.schedules.volume.accessModes`      | Access modes                                                  | `ReadWriteOnce`        |
 | `pgBackRest.repos.schedules.volume.storage`          | Access modes                                                  | `64Mi`                 |
 | `pgBackRest.repos.schedules.volume.storageClassName` | Storage class name modes                                      | `netapp-file-backup`   |
 | `pgBackRest.repoHost.requests.cpu`                   | CPU requests                                                  | `1m`                   |
