@@ -63,8 +63,8 @@ pgBackRest:
        storageClassName: netapp-file-backup
       # s3:
       #   uriStyle: path
-      #   bucket: "chefs"
-      #   endpoint: "https://commonservices.objectstore.gov.bc.ca"
+      #   bucket: "bucketName"
+      #   endpoint: "endpointName"
       #   region: "ca-central-1"
       schedules:
         - name: full-weekly
