@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-exporter-egress
+  namespace: a12c97-tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crunchy-postgres
+      postgres-operator.crunchydata.com/instance-set: ha
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 9187
+      protocol: TCP

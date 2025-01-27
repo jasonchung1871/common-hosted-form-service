@@ -201,6 +201,7 @@ spec:
   patroni:
     dynamicConfiguration:
       postgresql:
+        pause: {{ default false .Values.patroni.postgresql.pause}}
         pg_hba:
           - {{ .Values.patroni.postgresql.pg_hba}}
         parameters:

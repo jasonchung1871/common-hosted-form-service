@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-ingress
+  namespace: a12c97-tools
+spec:
+  podSelector:
+    matchLabels:
+      app: prometheus
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: crunchy-postgres
+            postgres-operator.crunchydata.com/instance-set: ha
+    ports:
+    - port: 9187
+      protocol: TCP
