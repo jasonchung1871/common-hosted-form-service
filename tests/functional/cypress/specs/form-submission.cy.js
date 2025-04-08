@@ -1,5 +1,4 @@
 import 'cypress-keycloak-commands';
-import 'cypress-drag-drop';
 
 const depEnv = Cypress.env('depEnv');
 
