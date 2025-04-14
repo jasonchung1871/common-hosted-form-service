@@ -1,4 +1,4 @@
-export function formsettings(){
+export async function formsettings(){
 
     const depEnv = Cypress.env('depEnv');
     const username=Cypress.env('keycloakUsername');
@@ -18,11 +18,13 @@ export function formsettings(){
     }
     cy.get('#logoutButton > .v-btn__content > span').should('not.exist');
     cy.get('[data-test="base-auth-btn"] > .v-btn > .v-btn__content > span').click();
+    cy.url().should('include', '/login');
     cy.get('[data-test="idir"]').click();
-    
+    cy.url().should('include', 'https://logintest7.gov.bc.ca');
     cy.get('#user').type(username);
     cy.get('#password').type(password);
     cy.get('.btn').click();
+    cy.url().should('include', 'https://chefs-dev.apps.silver.devops.gov.bc.ca');
     cy.get('[data-cy="help"]')
     .should("have.attr", "href", "https://developer.gov.bc.ca/docs/default/component/chefs-techdocs")
     .should("have.text", "Help");

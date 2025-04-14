@@ -1,14 +1,15 @@
 import 'cypress-keycloak-commands';
-import { formsettings } from '../support/login.js';
-
-const depEnv = Cypress.env('depEnv');
-
-Cypress.Commands.add('waitForLoad', () => {
-  const loaderTimeout = 60000;
-  cy.get('.nprogress-busy', { timeout: loaderTimeout }).should('not.exist');
-});
 
 describe('Form Designer', () => {
+
+  before(() => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.window().then((win) => {
+      win.sessionStorage.clear();
+    });
+    cy.login();
+  });
 
   beforeEach(()=>{
     
@@ -20,16 +21,19 @@ describe('Form Designer', () => {
     });
   });
   it('Visits the form settings page', () => {
-    
-    cy.viewport(1000, 1100);
-    cy.waitForLoad();
-    formsettings();
+    cy.formsettings();
+    cy.get('[data-cy=saveButton]').should('be.visible');
   });
+
   it('checks Apikey Settings', () => {
+    cy.intercept('POST', '**/forms/*', (req) => {
+      console.log(req);
+    }).as('formCreate');
     cy.viewport(1000, 1100);
     cy.waitForLoad();
-    
+    cy.task('log', 'Intercept regisered for formCreate');
     cy.get('button').contains('BC Government').click();
+    cy.get('div.builder-components.drag-container.formio-builder-form', { timeout: 30000 }).should('be.visible');
     cy.get('div.formio-builder-form').then($el => {
       const coords = $el[0].getBoundingClientRect();
       cy.get('[data-key="simplebcaddress"]')
@@ -37,15 +41,14 @@ describe('Form Designer', () => {
       .trigger('mousemove', coords.x, -550, { force: true })
         //.trigger('mousemove', coords.y, +100, { force: true })
       .trigger('mouseup', { force: true });
-      cy.wait(2000); 
       cy.get('button').contains('Save').click();
+      cy.get('[data-cy="undoButton"]').find('button').should('exist').and('not.be.disabled');
     });
     // Form saving
-    cy.wait(2000); 
-    let savedButton = cy.get('[data-cy=saveButton]');
-    expect(savedButton).to.not.be.null;
-    savedButton.trigger('click');
-    cy.wait(3000);
+    cy.get('[data-cy="saveButton"]').should('exist').and('not.be.disabled').click();
+    cy.wait('@formCreate', { timeout: 20000 }).then((interception) => {
+      console.log('Intercepted request: ', interception);
+    }); 
 
     // Verify Api key functionality
     cy.get('.mdi-cog').click();
@@ -60,12 +63,14 @@ describe('Form Designer', () => {
     cy.get('input[aria-label="Allow this API key to access submitted files"]').should('be.checked');
     //Delete Apikey
     cy.get('[data-test="canDeleteApiKey"]')
+  });
 
-
-  })
   it('checks Cdogs Upload', () => {
+    cy.intercept('POST', '**/documentTemplates').as('cdogsUpload');
+    cy.intercept('DELETE', '**/app/api/v1/forms/*').as('deleteForm');
     cy.viewport(1000, 1100);
     cy.waitForLoad();
+
     cy.get(':nth-child(3) > .v-expansion-panel > .v-expansion-panel-title > .v-expansion-panel-title__overlay').click();
     let fileUploadInputField = cy.get('input[type=file]');
     cy.get('input[type=file]').should('not.to.be.null');
@@ -78,14 +83,13 @@ describe('Form Designer', () => {
     fileUploadInputField.attachFile('SamplePPTx.pptx');
     cy.get('div').contains('The template must use one of the following extentions: .txt, .docx, .html, .odt, .pptx, .xlsx').should('not.exist');
     
-    cy.waitForLoad();
-    cy.waitForLoad();
     cy.get('button[title="Upload"]').click();
-    cy.wait(2000);    
+    cy.wait('@cdogsUpload', { timeout: 20000 }).should((interception) => {
+      expect(interception.response.statusCode).to.equal(201);
+    });
     cy.get('.mdi-minus-circle').click();
     cy.get('input[type=file]').should('not.to.be.null');
     fileUploadInputField.attachFile('file_example_XLSX_50.xlsx');
-    cy.waitForLoad();
     cy.get('button[title="Upload"]').click();
     cy.get('.mdi-minus-circle').click();
     cy.get('input[type=file]').should('not.to.be.null');
@@ -105,9 +109,9 @@ describe('Form Designer', () => {
     
     cy.get('[data-test="canRemoveForm"]').click();
     cy.get('[data-test="continue-btn-continue"]').click();
-    cy.wait(9000);
-    cy.get('#logoutButton > .v-btn__content > span').click();
-
+    cy.wait('@deleteForm', { timeout: 20000 }).should((interception) => {
+      expect(interception.response.statusCode).to.equal(204);
+    });
   })
 
 })

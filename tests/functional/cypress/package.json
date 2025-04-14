@@ -12,7 +12,9 @@
     "test:chrome": "npm run test -- --browser chrome",
     "test:dev": "cypress open",
     "test:edge": "npm run test -- --browser edge",
-    "test:firefox": "npm run test -- --browser firefox"
+    "test:firefox": "npm run test -- --browser firefox",
+    "test:single": "cypress run --headless --spec",
+    "test:single:debug": "cross-env DEBUG=cypress:* cypress run --headless --spec"
   },
   "keywords": [
     "chefs",
@@ -21,6 +23,7 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "cypress": "^14.2.1",
     "cypress-file-upload": "^5.0.8",
     "cypress-keycloak-commands": "^1.2.0",

@@ -91,6 +91,7 @@ formStore.resetForm();
               <v-checkbox
                 v-model="disclaimerCheckbox"
                 :rules="disclaimerRules"
+                data-test="disclaimer-checkbox"
                 required="true"
               >
                 <template #label>
