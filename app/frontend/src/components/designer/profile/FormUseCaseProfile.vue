@@ -38,6 +38,7 @@ const useCase = computed(() => {
           :class="{ 'mr-2': isRTL }"
           v-bind="props"
           icon="mdi:mdi-help-circle-outline"
+          data-test="useCaseToolTipIcon"
         />
       </template>
       <span>

@@ -118,6 +118,7 @@ const emailArrayRules = ref([
       :delimiters="[' ', ',']"
       append-icon=""
       :lang="locale"
+      data-test="formSubmissionReceivedEmails"
     >
       <template #no-data>
         <v-list-item>

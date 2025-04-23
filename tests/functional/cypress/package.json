@@ -9,7 +9,7 @@
     "purge": "rm -rf node_modules",
     "test": "cypress run",
     "test:allbrowsers": "npm run test:chrome && npm run test:edge && npm run test:firefox",
-    "test:chrome": "npm run test -- --browser chrome",
+    "test:chrome": "npm run test -- --headless --browser chrome",
     "test:dev": "cypress open",
     "test:edge": "npm run test -- --browser edge",
     "test:firefox": "npm run test -- --browser firefox",

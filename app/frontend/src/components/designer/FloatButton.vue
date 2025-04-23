@@ -233,7 +233,7 @@ defineExpose({
         <div
           class="fab d-flex flex-column"
           :class="{ 'disabled-router': !isManageEnabled }"
-          data-cy="settingsRouterLink"
+          data-test="settingsRouterLink"
         >
           <span :lang="locale">{{ $t('trans.floatButton.manage') }}</span>
           <v-btn

@@ -78,6 +78,7 @@ defineExpose({ jsonStr, updateMetadata, formatJSON });
             :class="{ 'mx-1': isRTL }"
             v-bind="props"
             icon="mdi:mdi-help-circle-outline"
+            data-test="formMetadataHelpIcon"
           ></v-icon>
         </template>
         <span>

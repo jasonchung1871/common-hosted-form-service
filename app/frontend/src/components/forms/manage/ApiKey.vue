@@ -202,6 +202,7 @@ defineExpose({
     <BaseDialog
       v-model="showConfirmationDialog"
       type="CONTINUE"
+      data-test="formApiConfirmationDialog"
       @close-dialog="showConfirmationDialog = false"
       @continue-dialog="createKey"
     >

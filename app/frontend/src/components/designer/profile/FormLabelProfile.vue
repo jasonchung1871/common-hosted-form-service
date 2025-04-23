@@ -65,6 +65,7 @@ onMounted(async () => {
             :class="{ 'mr-2': isRTL }"
             v-bind="props"
             icon="mdi:mdi-help-circle-outline"
+            data-test="labelPromptIcon"
           />
         </template>
         <span>
