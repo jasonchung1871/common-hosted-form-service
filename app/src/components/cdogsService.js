@@ -6,14 +6,14 @@ const log = require('./log')(module.filename);
 const SERVICE = 'CDOGS';
 
 class CdogsService extends AxiosService {
-  constructor() {
+  constructor(version = 'v2') {
     super({
       tokenUrl: config.get('serviceClient.commonServices.cdogs.tokenEndpoint'),
       clientId: config.get('serviceClient.commonServices.cdogs.clientId'),
       clientSecret: config.get('serviceClient.commonServices.cdogs.clientSecret'),
       apiUrl: config.get('serviceClient.commonServices.cdogs.endpoint'),
       serviceName: SERVICE,
-      version: 'v2',
+      version: version,
     });
   }
 

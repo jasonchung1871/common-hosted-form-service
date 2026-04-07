@@ -32,7 +32,7 @@
   },
   "frontend": {
     "adminDashboardUrl": "",
-    "apiPath": "api/v1",
+    "apiPath": "api",
     "basePath": "/app",
     "oidc": {
       "clientId": "chefs-frontend-localhost-5300",
@@ -42,7 +42,7 @@
     }
   },
   "server": {
-    "apiPath": "/api/v1",
+    "apiPath": "/api",
     "basePath": "/app",
     "bodyLimit": "30mb",
     "oidc": {
@@ -103,6 +103,10 @@
         "clientSecret": "CSS_CLIENT_SECRET",
         "environment": "dev"
       }
+    },
+    "carbone": {
+      "apiKey": "SC_CARBONE_APIKEY",
+      "endpoint": "SC_CARBONE_ENDPOINT"
     }
   },
   "customBcAddressFormioComponent": {

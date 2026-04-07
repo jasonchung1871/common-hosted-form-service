@@ -99,6 +99,10 @@
         "clientSecret": "SC_CS_CSS_CLIENT_SECRET",
         "environment": "SC_CS_CSS_ENVIRONMENT"
       }
+    },
+    "carbone": {
+      "apiKey": "SC_CARBONE_APIKEY",
+      "endpoint": "SC_CARBONE_ENDPOINT"
     }
   },
   "webcomponents": {
